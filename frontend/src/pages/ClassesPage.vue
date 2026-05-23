@@ -95,6 +95,54 @@
         </q-card-section>
 
         <q-card-section>
+          <!-- Concept explanation -->
+          <q-expansion-item
+            icon="help_outline"
+            label="Quando usar Turnos? Qual a diferença para os Planos Curriculares?"
+            header-class="text-grey-7 text-caption"
+            class="q-mb-md rounded-borders"
+            style="border: 1px solid #e0e0e0"
+          >
+            <q-card flat>
+              <q-card-section class="q-pt-sm q-pb-md">
+                <div class="row q-col-gutter-md">
+                  <div class="col-12 col-sm-4">
+                    <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+                      <q-icon name="view_week" size="xs" class="q-mr-xs" />Estrutura semanal
+                      <span class="text-grey-5 text-weight-regular"> (Planos Curriculares)</span>
+                    </div>
+                    <div class="text-caption text-grey-7">
+                      Quantas vezes e como a disciplina aparece no horário por semana.<br>
+                      Ex: "2+1" = um bloco duplo + uma aula isolada.<br>
+                      <strong>Todos os alunos estão juntos.</strong>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-4">
+                    <div class="text-caption text-weight-bold text-grey-8 q-mb-xs">
+                      <q-icon name="swap_horiz" size="xs" class="q-mr-xs" />Par semestral
+                      <span class="text-grey-5 text-weight-regular"> (Planos Curriculares)</span>
+                    </div>
+                    <div class="text-caption text-grey-7">
+                      Duas disciplinas que se alternam nos mesmos tempos do horário, mas em semestres diferentes.<br>
+                      Ex: TIC no 1.º sem ↔ EV no 2.º sem.<br>
+                      <strong>Os mesmos alunos, em momentos distintos do ano.</strong>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-4">
+                    <div class="text-caption text-weight-bold text-secondary q-mb-xs">
+                      <q-icon name="call_split" size="xs" class="q-mr-xs" />Turnos
+                      <span class="text-grey-5 text-weight-regular"> (esta página)</span>
+                    </div>
+                    <div class="text-caption text-grey-7">
+                      A turma divide-se fisicamente: metade vai para uma sala com um professor, a outra metade vai para outra sala com outro professor — <strong>ao mesmo tempo</strong>.<br>
+                      Ex: metade tem CN em lab A enquanto a outra tem FQ em lab B.
+                    </div>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </q-expansion-item>
+
           <!-- Curriculum read-only — redirects to plans for editing -->
           <q-banner dense rounded class="bg-blue-1 text-blue-10 q-mb-md">
             <template #avatar><q-icon name="menu_book" color="blue-7" /></template>

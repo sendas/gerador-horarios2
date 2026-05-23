@@ -240,6 +240,9 @@
           <div class="text-caption text-grey-6">
             "2+1" = bloco de 2 + 1 aula · "1+1" = duas aulas separadas · "1+1+1" = três aulas separadas
           </div>
+          <div class="text-caption text-grey-5 q-mt-xs">
+            <q-icon name="info" size="xs" class="q-mr-xs" />Esta opção define como as aulas se distribuem na semana — a turma está sempre junta. Para dividir a turma em grupos simultâneos (ex: metade tem CN enquanto a outra tem FQ), usa <strong>Turnos</strong> na página de Turmas.
+          </div>
 
           <q-separator class="q-my-sm" />
 
@@ -264,7 +267,7 @@
               map-options
               clearable
               label="Disciplina par (semestre oposto)"
-              hint="Disciplina que ocupa o mesmo horário no outro semestre"
+              hint="Os mesmos alunos têm esta disciplina no outro semestre, no mesmo bloco horário — não é uma divisão de turma"
             />
           </template>
         </q-card-section>
