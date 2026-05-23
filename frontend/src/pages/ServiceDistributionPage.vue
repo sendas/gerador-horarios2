@@ -339,7 +339,8 @@
                 <td class="comp-td comp-td--center">
                   <div class="row no-wrap items-center justify-center" style="gap:4px">
                     <q-input v-model.number="row.art79_reduction" type="number" min="0" max="10" dense outlined
-                      style="width:54px" @update:model-value="onArt79Change(row)" />
+                      style="width:54px" @update:model-value="onArt79Change(row)"
+                      @blur="saveArt79(row)" @keyup.enter="saveArt79(row)" />
                     <q-icon v-if="row.art79_manual" name="edit" size="xs" color="orange-6">
                       <q-tooltip>Redução manual</q-tooltip>
                     </q-icon>
@@ -754,6 +755,20 @@ function onBirthDateChange(row: CompRow) {
 function onArt79Change(row: CompRow) {
   row.art79_manual = true
   recalcTeachingComponent(row)
+}
+
+async function saveArt79(row: CompRow) {
+  try {
+    await api.put('/teachers/bulk-update', [{
+      id: row.id,
+      art79_reduction: row.art79_reduction,
+      art79_manual: row.art79_manual,
+      teaching_component: clLiquida(row),
+    }])
+    $q.notify({ type: 'positive', message: `Art. 79° guardado (${row.art79_reduction}h)`, timeout: 1200 })
+  } catch {
+    $q.notify({ type: 'negative', message: 'Erro ao guardar Art. 79°' })
+  }
 }
 
 async function openComponentDialog() {
