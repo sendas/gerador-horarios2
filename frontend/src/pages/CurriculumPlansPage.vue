@@ -237,16 +237,25 @@
             emit-value
             map-options
           />
-          <div class="text-caption text-grey-6">
-            "2+1" = bloco de 2 + 1 aula · "1+1" = duas aulas separadas · "1+1+1" = três aulas separadas
-          </div>
-          <div class="text-caption text-grey-5 q-mt-xs">
-            <q-icon name="info" size="xs" class="q-mr-xs" />Esta opção define como as aulas se distribuem na semana — a turma está sempre junta. Para dividir a turma em grupos simultâneos (ex: metade tem CN enquanto a outra tem FQ), usa <strong>Turnos</strong> na página de Turmas.
-          </div>
+          <q-banner dense rounded class="bg-blue-grey-1 text-blue-grey-9 q-mt-xs" style="font-size:12px">
+            <template #avatar><q-icon name="info" color="blue-grey-6" size="sm" /></template>
+            <div class="q-mb-xs">Como os tempos desta disciplina são agrupados ao longo da semana — <strong>a turma está sempre junta</strong>.</div>
+            <div class="q-gutter-y-xs">
+              <div><strong>"2"</strong> → um bloco duplo (ex: 90 min de Matemática)</div>
+              <div><strong>"1+1"</strong> → dois tempos em dias diferentes (ex: Português: 2.ª e 4.ª feira)</div>
+              <div><strong>"2+1"</strong> → um bloco duplo + um tempo isolado (ex: CN: bloco de laboratório + 1 aula teórica)</div>
+            </div>
+            <div class="q-mt-xs text-blue-grey-6">
+              <q-icon name="call_split" size="xs" class="q-mr-xs" />Para dividir a turma em dois grupos simultâneos (ex: metade tem CN enquanto a outra metade tem FQ no laboratório), usa <strong>Turnos</strong> na página de Turmas.
+            </div>
+          </q-banner>
 
           <q-separator class="q-my-sm" />
 
           <q-checkbox v-model="entryForm.is_semestral" label="Disciplina semestral (apenas meio ano)" />
+          <div class="text-caption text-grey-6 q-ml-xl q-mb-xs">
+            Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.
+          </div>
 
           <template v-if="entryForm.is_semestral">
             <q-select
@@ -267,8 +276,13 @@
               map-options
               clearable
               label="Disciplina par (semestre oposto)"
-              hint="Os mesmos alunos têm esta disciplina no outro semestre, no mesmo bloco horário — não é uma divisão de turma"
             />
+            <q-banner dense rounded class="bg-orange-1 text-orange-9 q-mt-xs" style="font-size:12px">
+              <template #avatar><q-icon name="swap_horiz" color="orange-7" size="sm" /></template>
+              <div>A disciplina par ocupa os <strong>mesmos blocos horários</strong> no semestre oposto.</div>
+              <div class="q-mt-xs">Ex: TIC no 1.º sem ↔ ET no 2.º sem — os alunos têm TIC no 1.º semestre e ET nesse mesmo horário no 2.º semestre.</div>
+              <div class="q-mt-xs text-orange-7">Isto <strong>não</strong> divide a turma — são os mesmos alunos, em momentos diferentes do ano.</div>
+            </q-banner>
           </template>
         </q-card-section>
         <q-card-actions align="right">
