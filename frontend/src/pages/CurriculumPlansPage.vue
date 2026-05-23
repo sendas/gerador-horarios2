@@ -58,6 +58,7 @@
           :disable="!selectedCluster || !selectedYear"
           @click="openCopyDialog"
         />
+        <ExportButton :disable="plans.length === 0" @export="doExport" />
       </q-card-section>
     </q-card>
 
@@ -398,9 +399,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import axios from 'axios'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const API = '/api/v1'
+const { exportToPDF, exportToHTML, exportToCSV } = useExport()
 
 const clusters = ref<any[]>([])
 const academicYears = ref<any[]>([])
@@ -433,6 +437,23 @@ const copyingYL = ref(false)
 const applyResultDialog = ref(false)
 const applyResultMsg = ref('')
 const syncing = ref(false)
+
+const planExportColumns: ExportColumn[] = [
+  { label: 'Ano Esc.', field: (r) => `${r.year_level}º`, align: 'center' },
+  { label: 'Disciplina', field: (r) => (subjects.value.find((s: any) => s.id === r.subject_id) as any)?.name ?? '—' },
+  { label: 'H/sem', field: 'hours_per_week', align: 'center' },
+  { label: 'Estrutura semanal', field: 'weekly_structure' },
+  { label: 'Regime', field: (r) => r.is_semestral ? 'Semestral' : 'Anual', align: 'center' },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const rows = plans.value as unknown as Record<string, unknown>[]
+  const yearLabel = academicYears.value.find((y: any) => y.id === selectedYear.value)?.name ?? ''
+  const title = `Planos Curriculares${yearLabel ? ` — ${yearLabel}` : ''}`
+  if (format === 'pdf') exportToPDF(title, rows, planExportColumns)
+  else if (format === 'html') exportToHTML(title, rows, planExportColumns, 'planos-curriculares')
+  else exportToCSV(rows, planExportColumns, 'planos-curriculares')
+}
 
 const entryForm = ref({
   subject_id: null as number | null,

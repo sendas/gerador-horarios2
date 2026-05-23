@@ -6,6 +6,7 @@
       <q-input v-model="search" placeholder="Pesquisar..." dense outlined clearable style="min-width:200px">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
+      <ExportButton class="q-ml-sm" @export="doExport" />
       <q-btn color="primary" icon="add" label="Nova" @click="openCreate" class="q-ml-sm" />
     </div>
 
@@ -156,10 +157,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useSubjectsStore, type Subject } from 'stores/subjects'
 import { useClustersStore } from 'stores/clusters'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const subjectsStore = useSubjectsStore()
 const clustersStore = useClustersStore()
+const { exportToPDF, exportToHTML, exportToCSV } = useExport()
 
 const colorPalette = [
   '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
@@ -195,6 +199,22 @@ const columns = [
   { name: 'flags', label: 'Flags', field: 'id', align: 'left' as const },
   { name: 'actions', label: 'Ações', field: 'actions', align: 'center' as const },
 ]
+
+const exportColumns: ExportColumn[] = [
+  { label: 'Nome', field: 'name' },
+  { label: 'Código', field: 'code' },
+  { label: 'Funcionamento', field: (r) => structureLabel(r.weekly_structure as string) },
+  { label: 'Regime', field: (r) => r.regime === 'semestral' ? 'Semestral' : 'Anual', align: 'center' },
+  { label: 'Ed. Física', field: (r) => r.is_physical_education ? 'Sim' : 'Não', align: 'center' },
+  { label: 'Articulado', field: (r) => r.can_exempt_articulado ? 'Sim' : 'Não', align: 'center' },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const rows = subjectsStore.subjects as unknown as Record<string, unknown>[]
+  if (format === 'pdf') exportToPDF('Disciplinas', rows, exportColumns)
+  else if (format === 'html') exportToHTML('Disciplinas', rows, exportColumns, 'disciplinas')
+  else exportToCSV(rows, exportColumns, 'disciplinas')
+}
 
 const search = ref('')
 const dialog = ref(false)

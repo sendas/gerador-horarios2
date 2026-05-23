@@ -6,6 +6,7 @@
       <q-input v-model="search" placeholder="Pesquisar..." dense outlined clearable style="min-width:200px">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
+      <ExportButton class="q-ml-sm" @export="doExport" />
       <q-btn color="orange-7" icon="event_busy" label="Blocos indisponíveis" @click="openBulkAvail" class="q-ml-sm">
         <q-tooltip>Definir blocos indisponíveis para todos os professores do agrupamento</q-tooltip>
       </q-btn>
@@ -559,11 +560,14 @@ import { useSubjectsStore } from 'stores/subjects'
 import { useClassesStore, type SchoolClass } from 'stores/classes'
 import { api } from 'boot/axios'
 import ImportDialog from 'components/ImportDialog.vue'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const teachersStore = useTeachersStore()
 const clustersStore = useClustersStore()
 const classesStore = useClassesStore()
+const { exportToPDF, exportToHTML, exportToCSV } = useExport()
 
 const search = ref('')
 const showImport = ref(false)
@@ -579,6 +583,24 @@ const yearsStore = useAcademicYearsStore()
 const subjectsStore = useSubjectsStore()
 
 const DAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
+
+const exportColumns: ExportColumn[] = [
+  { label: 'Nome', field: 'name' },
+  { label: 'Escola Base', field: (r) => (r.primary_school_name as string) ?? '—' },
+  { label: 'Disciplinas', field: (r) => ((r.subject_names as string[]) ?? []).join(', ') },
+  { label: 'CL líq. (h)', field: (r) => r.teaching_component ?? '—', align: 'center' },
+  { label: 'CL base (h)', field: (r) => r.base_teaching_hours ?? '—', align: 'center' },
+  { label: 'Máx. aulas/dia', field: (r) => r.max_daily_lessons ?? '—', align: 'center' },
+  { label: 'Dia livre pref.', field: (r) => r.preferred_free_day !== null && r.preferred_free_day !== undefined ? DAYS[r.preferred_free_day as number] : '—', align: 'center' },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const rows = filteredTeachers.value as unknown as Record<string, unknown>[]
+  const title = 'Professores'
+  if (format === 'pdf') exportToPDF(title, rows, exportColumns)
+  else if (format === 'html') exportToHTML(title, rows, exportColumns, 'professores')
+  else exportToCSV(rows, exportColumns, 'professores')
+}
 
 const columns = [
   { name: 'name', label: 'Nome', field: 'name', align: 'left' as const, sortable: true },

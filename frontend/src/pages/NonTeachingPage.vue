@@ -1,6 +1,9 @@
 <template>
   <q-page padding>
-    <div class="text-h5 q-mb-md">Serviço Não Letivo</div>
+    <div class="row items-center q-mb-md">
+      <div class="text-h5 col">Serviço Não Letivo</div>
+      <ExportButton @export="doExport" />
+    </div>
 
     <div class="row q-col-gutter-md">
       <!-- Types section -->
@@ -117,11 +120,14 @@ import { api } from 'boot/axios'
 import { useClustersStore } from 'stores/clusters'
 import { useTeachersStore } from 'stores/teachers'
 import { useAcademicYearsStore } from 'stores/academicYears'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const clustersStore = useClustersStore()
 const teachersStore = useTeachersStore()
 const yearsStore = useAcademicYearsStore()
+const { exportToPDF, exportToHTML, exportToCSV } = useExport()
 
 const DAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
 const dayOptions = DAYS.map((d, i) => ({ label: d, value: i }))
@@ -145,6 +151,22 @@ const yearOptions = computed(() => yearsStore.years.map((y) => ({ label: y.name,
 const typeOptions = computed(() => types.value.map((t) => ({ label: t.name, value: t.id })))
 
 function typeName(id: number) { return types.value.find((t) => t.id === id)?.name ?? '—' }
+
+const exportColumns: ExportColumn[] = [
+  { label: 'Professor', field: (r) => teachersStore.teachers.find((t) => t.id === r.teacher_id)?.name ?? '—' },
+  { label: 'Tipo', field: (r) => typeName(r.non_teaching_type_id as number) },
+  { label: 'Ano Letivo', field: (r) => yearsStore.years.find((y) => y.id === r.academic_year_id)?.name ?? '—' },
+  { label: 'Dia', field: (r) => DAYS[r.day_of_week as number] ?? '—', align: 'center' },
+  { label: 'Tempo', field: 'slot_number', align: 'center' },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const rows = assignments.value as unknown as Record<string, unknown>[]
+  const title = 'Serviço Não Letivo'
+  if (format === 'pdf') exportToPDF(title, rows, exportColumns)
+  else if (format === 'html') exportToHTML(title, rows, exportColumns, 'servico-nao-letivo')
+  else exportToCSV(rows, exportColumns, 'servico-nao-letivo')
+}
 
 const assignCols = [
   { name: 'teacher', label: 'Professor', field: (r: { teacher_id: number }) => teachersStore.teachers.find(t => t.id === r.teacher_id)?.name ?? '—', align: 'left' as const },

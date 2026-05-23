@@ -31,7 +31,7 @@
         />
       </div>
       <div class="col-12 col-sm-4 row items-center q-gutter-sm">
-        <q-btn color="primary" icon="download" label="Exportar CSV" dense :disable="teachers.length === 0" @click="exportCsv" />
+        <ExportButton :disable="teachers.length === 0" @export="doExport" />
         <q-btn color="secondary" icon="upload" label="Importar Comp. Letiva" dense :disable="!selectedYearId" @click="showImport = true" />
       </div>
     </div>
@@ -421,9 +421,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAcademicYearsStore } from 'stores/academicYears'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const yearsStore = useAcademicYearsStore()
+const { exportToPDF, exportToHTML } = useExport()
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -637,7 +640,30 @@ async function onTimetableChange() {
   await loadData()
 }
 
-// ── Export CSV ────────────────────────────────────────────────────────────────
+// ── Export ────────────────────────────────────────────────────────────────────
+
+const distExportColumns: ExportColumn[] = [
+  { label: 'Professor', field: 'name' },
+  { label: 'Comp. Letiva', field: (r) => (r.teaching_component as number | null) ?? '—', align: 'center' },
+  { label: 'Horas Marcadas', field: 'scheduled_hours', align: 'center' },
+  { label: 'Serv. Não Letivo', field: 'non_teaching_hours', align: 'center' },
+  { label: 'Total Serviço', field: 'total_service', align: 'center' },
+  {
+    label: 'Turmas',
+    field: (r) =>
+      ((r.classes_taught as { class_name: string; subject_name: string; hours_per_week: number }[]) ?? [])
+        .map((ct) => `${ct.class_name} ${ct.subject_name} (${ct.hours_per_week}h)`)
+        .join(' | '),
+  },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const rows = filteredTeachers.value as unknown as Record<string, unknown>[]
+  const title = 'Distribuição de Serviço'
+  if (format === 'pdf') exportToPDF(title, rows, distExportColumns)
+  else if (format === 'html') exportToHTML(title, rows, distExportColumns, 'distribuicao-servico')
+  else exportCsv()
+}
 
 function exportCsv() {
   const header = ['Professor', 'Comp. Letiva', 'Horas Marcadas', 'Serv. Não Letivo', 'Total Serviço', 'Turmas']

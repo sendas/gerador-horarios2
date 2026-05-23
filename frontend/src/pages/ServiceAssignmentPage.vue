@@ -2,6 +2,7 @@
   <q-page padding>
     <div class="row items-center q-mb-md">
       <div class="text-h5 col">Distribuição de Serviço</div>
+      <ExportButton class="q-mr-sm" :disable="allEntries.length === 0" title="Exportar atribuições" @export="doExport" />
       <q-btn color="indigo-7" icon="calculate" label="Componentes" class="q-mr-sm" :disable="!selectedYearId" @click="openComponentDialog" />
       <q-select
         v-model="selectedYearId"
@@ -442,12 +443,15 @@ import { useClustersStore } from 'stores/clusters'
 import { useAcademicYearsStore } from 'stores/academicYears'
 import { useTeachersStore } from 'stores/teachers'
 import { useClassesStore } from 'stores/classes'
+import ExportButton from 'components/ExportButton.vue'
+import { useExport, type ExportColumn } from 'composables/useExport'
 
 const $q = useQuasar()
 const clustersStore = useClustersStore()
 const yearsStore = useAcademicYearsStore()
 const teachersStore = useTeachersStore()
 const classesStore = useClassesStore()
+const { exportToPDF, exportToHTML, exportToCSV } = useExport()
 
 type Entry = {
   id: number
@@ -567,6 +571,25 @@ const groupedBySchool = computed(() => {
       return { school_name, subjects, assignedHours: schoolAssignedHours }
     })
 })
+
+// ── Export atribuições de todos os professores ────────────────────────────────
+const assignExportColumns: ExportColumn[] = [
+  { label: 'Professor', field: (r) => teachersStore.teachers.find((t) => t.id === r.teacher_id)?.name ?? '—' },
+  { label: 'Turma', field: 'class_name' },
+  { label: 'Disciplina', field: 'subject_name' },
+  { label: 'Ano', field: (r) => `${r.year_level}º`, align: 'center' },
+  { label: 'Escola', field: 'school_name' },
+  { label: 'H/sem', field: 'hours_per_week', align: 'center' },
+]
+
+function doExport(format: 'pdf' | 'html' | 'csv') {
+  const assigned = allEntries.value.filter((e) => e.teacher_id !== null)
+  const rows = assigned as unknown as Record<string, unknown>[]
+  const title = 'Distribuição de Serviço — Atribuições'
+  if (format === 'pdf') exportToPDF(title, rows, assignExportColumns)
+  else if (format === 'html') exportToHTML(title, rows, assignExportColumns, 'atribuicoes')
+  else exportToCSV(rows, assignExportColumns, 'atribuicoes')
+}
 
 // Classes the selected teacher is currently assigned to (shown in left panel)
 const assignedClassesSummary = computed(() => {
