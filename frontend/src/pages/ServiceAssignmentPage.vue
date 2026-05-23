@@ -2,7 +2,6 @@
   <q-page padding>
     <div class="row items-center q-mb-md">
       <div class="text-h5 col">Distribuição de Serviço</div>
-      <q-btn color="teal-7" icon="tune" label="Gerir horas" class="q-mr-sm" @click="openHoursDialog" />
       <q-btn color="indigo-7" icon="calculate" label="Componentes" class="q-mr-sm" :disable="!selectedYearId" @click="openComponentDialog" />
       <q-select
         v-model="selectedYearId"
@@ -23,7 +22,7 @@
     <div v-else class="row q-col-gutter-md">
 
       <!-- ── Left panel: teacher + hours ─────────────────── -->
-      <div class="col-12 col-md-3">
+      <div class="col-12 col-md-3" style="align-self: flex-start; position: sticky; top: 16px; max-height: calc(100vh - 90px); overflow-y: auto;">
 
         <!-- Teacher select -->
         <q-card flat bordered>
@@ -97,6 +96,34 @@
                 @blur="saveCreditHours"
                 @keyup.enter="saveCreditHours"
               />
+            </q-card-section>
+
+            <q-separator />
+            <q-card-section class="q-pt-sm q-pb-sm">
+              <div class="text-caption text-grey-7 q-mb-xs">TURMAS ATRIBUÍDAS</div>
+              <div v-if="assignedClassesSummary.length === 0" class="text-caption text-grey-5 q-mt-xs">
+                Nenhuma ainda
+              </div>
+              <q-list v-else dense class="q-mt-xs">
+                <q-item
+                  v-for="item in assignedClassesSummary"
+                  :key="item.class_id + '-' + item.subject_name"
+                  class="q-px-none"
+                  style="min-height: 28px"
+                >
+                  <q-item-section avatar style="min-width: 36px">
+                    <q-badge v-if="item.is_dt" color="teal-7" label="DT" />
+                    <q-icon v-else name="class" size="16px" color="grey-5" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-body2 text-weight-medium">{{ item.class_name }}</q-item-label>
+                    <q-item-label caption>{{ item.subject_name }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <span class="text-caption text-blue-7 text-weight-bold">{{ item.hours_per_week }}h</span>
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </q-card-section>
           </template>
         </q-card>
@@ -257,100 +284,6 @@
         </template>
       </div>
     </div>
-  <!-- Gerir horas dialog -->
-  <q-dialog v-model="showHoursDialog" full-width>
-    <q-card style="max-width:900px;width:100%">
-      <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6"><q-icon name="tune" class="q-mr-sm" color="teal-7" />Gerir horas dos docentes</div>
-        <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
-      </q-card-section>
-
-      <!-- Bulk reduction toolbar -->
-      <q-card-section class="q-pt-sm q-pb-none">
-        <div class="row items-center q-gutter-sm">
-          <q-checkbox v-model="selectAll" label="Selecionar todos" color="teal-7" @update:model-value="toggleSelectAll" />
-          <q-badge v-if="selectedTeacherIds.size > 0" color="teal-7" :label="`${selectedTeacherIds.size} selecionado(s)`" />
-          <q-space />
-          <template v-if="selectedTeacherIds.size > 0">
-            <span class="text-caption text-grey-7">Aplicar redução a selecionados:</span>
-            <q-input v-model.number="bulkReduction" type="number" min="0" max="22" dense outlined style="width:80px" suffix="h" />
-            <q-btn color="teal-7" dense unelevated label="Aplicar" @click="applyBulkReduction" />
-          </template>
-          <q-btn color="primary" unelevated label="Guardar alterações" icon="save" :loading="savingHours" @click="saveAllHours" />
-        </div>
-      </q-card-section>
-
-      <q-card-section style="max-height:70vh;overflow-y:auto">
-        <div v-if="hoursLoading" class="text-center q-pa-xl"><q-spinner size="40px" color="primary" /></div>
-        <template v-else>
-          <div class="row items-center q-mb-sm">
-            <q-space />
-            <q-input v-model="search" placeholder="Pesquisar..." dense outlined clearable style="min-width:200px">
-              <template #prepend><q-icon name="search" /></template>
-            </q-input>
-          </div>
-          <div v-for="school in hoursDialogData" :key="school.school_id" class="q-mb-lg">
-            <div class="text-subtitle1 text-weight-bold text-teal-7 q-mb-sm row items-center">
-              <q-icon name="school" class="q-mr-xs" />{{ school.school_name }}
-              <q-badge class="q-ml-sm" color="grey-5" :label="`${school.teachers.length} docentes`" />
-            </div>
-            <q-table
-              :rows="school.teachers"
-              :columns="hoursColumns"
-              row-key="id"
-              flat bordered
-              dense
-              hide-pagination
-              :rows-per-page-options="[0]"
-              :filter="search"
-              sort-by="name"
-            >
-              <template #body-cell-sel="props">
-                <q-td :props="props">
-                  <q-checkbox
-                    :model-value="selectedTeacherIds.has(props.row.id)"
-                    color="teal-7"
-                    dense
-                    @update:model-value="toggleTeacherSelect(props.row.id)"
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-teaching_component="props">
-                <q-td :props="props">
-                  <q-input
-                    v-model.number="props.row.teaching_component"
-                    type="number" min="0" max="26" dense borderless
-                    style="width:70px"
-                    suffix="h"
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-credit_hours="props">
-                <q-td :props="props">
-                  <q-input
-                    v-model.number="props.row.credit_hours"
-                    type="number" min="0" max="22" dense borderless
-                    style="width:70px"
-                    suffix="h"
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-letivo="props">
-                <q-td :props="props" class="text-center">
-                  <q-badge
-                    :color="effectiveHours(props.row) < 0 ? 'negative' : effectiveHours(props.row) === 0 ? 'positive' : 'primary'"
-                    :label="`${effectiveHours(props.row)}h livres`"
-                  />
-                </q-td>
-              </template>
-            </q-table>
-          </div>
-        </template>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
-
   <!-- Component management dialog -->
   <q-dialog v-model="showComponents" persistent maximized>
     <q-card>
@@ -445,7 +378,7 @@
                     placeholder="Cargo..." style="min-width:180px"
                     @new-value="(val, done) => done(val)" />
                   <q-input v-model.number="alloc.hours" type="number" min="1" max="20"
-                    dense outlined style="width:65px" suffix="h" />
+                    dense outlined style="width:85px" suffix="h" />
                   <q-btn flat round dense size="xs" icon="close" color="grey-5"
                     @click="removeCreditAlloc(row, i)" />
                 </div>
@@ -464,7 +397,7 @@
                     placeholder="Cargo / Atividade..." style="min-width:180px"
                     @new-value="(val, done) => done(val)" />
                   <q-input v-model.number="alloc.hours" type="number" min="1" max="20"
-                    dense outlined style="width:65px" suffix="h" />
+                    dense outlined style="width:85px" suffix="h" />
                   <q-btn flat round dense size="xs" icon="close" color="grey-5"
                     @click="removeTeAlloc(row, i)" />
                 </div>
@@ -508,11 +441,13 @@ import { api } from 'boot/axios'
 import { useClustersStore } from 'stores/clusters'
 import { useAcademicYearsStore } from 'stores/academicYears'
 import { useTeachersStore } from 'stores/teachers'
+import { useClassesStore } from 'stores/classes'
 
 const $q = useQuasar()
 const clustersStore = useClustersStore()
 const yearsStore = useAcademicYearsStore()
 const teachersStore = useTeachersStore()
+const classesStore = useClassesStore()
 
 type Entry = {
   id: number
@@ -633,6 +568,31 @@ const groupedBySchool = computed(() => {
     })
 })
 
+// Classes the selected teacher is currently assigned to (shown in left panel)
+const assignedClassesSummary = computed(() => {
+  if (!selectedTeacherId.value) return []
+  const seen = new Set<string>()
+  return allEntries.value
+    .filter((e) => e.teacher_id === selectedTeacherId.value)
+    .map((e) => {
+      const cls = classesStore.classes.find((c) => c.id === e.class_id)
+      return {
+        class_id: e.class_id,
+        class_name: e.class_name,
+        subject_name: e.subject_name,
+        hours_per_week: e.hours_per_week,
+        is_dt: cls?.class_director_id === selectedTeacherId.value,
+      }
+    })
+    .filter((item) => {
+      const key = `${item.class_id}-${item.subject_name}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .sort((a, b) => a.class_name.localeCompare(b.class_name) || a.subject_name.localeCompare(b.subject_name))
+})
+
 // ── Helpers ────────────────────────────────────────────
 function filteredSubjectEntries(entries: Entry[]) {
   if (yearFilter.value.size === 0) return entries
@@ -671,6 +631,7 @@ async function onYearChange() {
     clustersStore.fetchAll(),
     yearsStore.fetchAll(),
     teachersStore.fetchAll(),
+    classesStore.fetchAll({ academic_year_id: selectedYearId.value }),
   ])
 
   const { data } = await api.get<Entry[]>('/classes/curriculum-overview', {
@@ -757,116 +718,6 @@ async function assignAll(subject: { subject_name: string; entries: Entry[] }) {
     await toggleAssign(entry)
   }
   assigningAll.value = null
-}
-
-// ── Gerir horas dialog ─────────────────────────────────
-type HoursRow = { id: number; name: string; teaching_component: number; credit_hours: number; assigned_hours: number }
-type HoursSchool = { school_id: number; school_name: string; teachers: HoursRow[] }
-
-const showHoursDialog = ref(false)
-const hoursLoading = ref(false)
-const savingHours = ref(false)
-const hoursDialogData = ref<HoursSchool[]>([])
-const selectedTeacherIds = ref<Set<number>>(new Set())
-const selectAll = ref(false)
-const bulkReduction = ref(0)
-
-const hoursColumns = [
-  { name: 'sel', label: '', field: 'sel', align: 'center' as const, style: 'width:40px' },
-  { name: 'name', label: 'Professor', field: 'name', align: 'left' as const },
-  { name: 'teaching_component', label: 'Componente (h)', field: 'teaching_component', align: 'center' as const },
-  { name: 'credit_hours', label: 'Redução (h)', field: 'credit_hours', align: 'center' as const },
-  { name: 'letivo', label: 'Saldo', field: 'letivo', align: 'center' as const },
-]
-
-function effectiveHours(row: HoursRow) {
-  return (row.teaching_component ?? 0) - (row.credit_hours ?? 0) - (row.assigned_hours ?? 0)
-}
-
-async function openHoursDialog() {
-  showHoursDialog.value = true
-  hoursLoading.value = true
-  selectedTeacherIds.value = new Set()
-  selectAll.value = false
-  try {
-    const teachers = teachersStore.teachers
-    // Compute assigned hours per teacher from allEntries
-    const assignedMap = new Map<number, number>()
-    for (const e of allEntries.value) {
-      if (e.teacher_id) assignedMap.set(e.teacher_id, (assignedMap.get(e.teacher_id) ?? 0) + e.hours_per_week)
-    }
-    // Group by school via school_ids
-    const schoolMap = new Map<number, { name: string; teachers: HoursRow[] }>()
-    // Get schools from store
-    const { useSchoolsStore } = await import('stores/schools')
-    const schoolsStore = useSchoolsStore()
-    if (!schoolsStore.schools.length) await schoolsStore.fetchAll()
-    const schoolNames = new Map(schoolsStore.schools.map((s) => [s.id, s.name]))
-
-    for (const t of teachers) {
-      const schoolIds = t.school_ids?.length ? t.school_ids : [0]
-      for (const sid of schoolIds) {
-        if (!schoolMap.has(sid)) schoolMap.set(sid, { name: schoolNames.get(sid) ?? 'Sem escola', teachers: [] })
-        // Only add once (first school)
-        if (sid === schoolIds[0]) {
-          schoolMap.get(sid)!.teachers.push({
-            id: t.id,
-            name: t.name,
-            teaching_component: t.teaching_component ?? 22,
-            credit_hours: t.credit_hours ?? 0,
-            assigned_hours: assignedMap.get(t.id) ?? 0,
-          })
-        }
-      }
-    }
-    hoursDialogData.value = [...schoolMap.entries()]
-      .sort(([, a], [, b]) => a.name.localeCompare(b.name))
-      .map(([school_id, v]) => ({ school_id, school_name: v.name, teachers: v.teachers.sort((a, b) => a.name.localeCompare(b.name)) }))
-  } finally {
-    hoursLoading.value = false
-  }
-}
-
-function toggleTeacherSelect(id: number) {
-  const s = new Set(selectedTeacherIds.value)
-  s.has(id) ? s.delete(id) : s.add(id)
-  selectedTeacherIds.value = s
-}
-
-function toggleSelectAll(val: boolean) {
-  if (val) {
-    const all = new Set<number>()
-    for (const school of hoursDialogData.value) school.teachers.forEach((t) => all.add(t.id))
-    selectedTeacherIds.value = all
-  } else {
-    selectedTeacherIds.value = new Set()
-  }
-}
-
-function applyBulkReduction() {
-  for (const school of hoursDialogData.value) {
-    for (const t of school.teachers) {
-      if (selectedTeacherIds.value.has(t.id)) t.credit_hours = bulkReduction.value
-    }
-  }
-  $q.notify({ type: 'positive', message: `Redução de ${bulkReduction.value}h aplicada a ${selectedTeacherIds.value.size} docente(s)` })
-}
-
-async function saveAllHours() {
-  savingHours.value = true
-  try {
-    const payload = hoursDialogData.value.flatMap((s) =>
-      s.teachers.map((t) => ({ id: t.id, teaching_component: t.teaching_component, credit_hours: t.credit_hours }))
-    )
-    await api.put('/teachers/bulk-update', payload)
-    await teachersStore.fetchAll()
-    $q.notify({ type: 'positive', message: 'Horas guardadas com sucesso' })
-    showHoursDialog.value = false
-  } catch {
-    $q.notify({ type: 'negative', message: 'Erro ao guardar' })
-  } finally {
-    savingHours.value = false
-  }
 }
 
 // ── Componentes dialog ─────────────────────────────────
@@ -1083,7 +934,7 @@ onMounted(async () => {
   await Promise.all([clustersStore.fetchAll(), yearsStore.fetchAll(), teachersStore.fetchAll()])
   filteredTeacherOptions.value = teachersStore.teachers.map((t) => ({ label: t.name, value: t.id }))
   selectedYearId.value = yearsStore.years.find((y) => y.is_active)?.id ?? yearsStore.years[0]?.id ?? null
-  if (selectedYearId.value) await onYearChange()
+  if (selectedYearId.value) await onYearChange()  // onYearChange já faz fetchAll das classes
 })
 </script>
 
