@@ -422,7 +422,7 @@ import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAcademicYearsStore } from 'stores/academicYears'
 import ExportButton from 'components/ExportButton.vue'
-import { useExport, type ExportColumn } from 'composables/useExport'
+import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const yearsStore = useAcademicYearsStore()

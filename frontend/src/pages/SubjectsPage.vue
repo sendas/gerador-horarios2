@@ -158,7 +158,7 @@ import { useQuasar } from 'quasar'
 import { useSubjectsStore, type Subject } from 'stores/subjects'
 import { useClustersStore } from 'stores/clusters'
 import ExportButton from 'components/ExportButton.vue'
-import { useExport, type ExportColumn } from 'composables/useExport'
+import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const subjectsStore = useSubjectsStore()

@@ -561,7 +561,7 @@ import { useClassesStore, type SchoolClass } from 'stores/classes'
 import { api } from 'boot/axios'
 import ImportDialog from 'components/ImportDialog.vue'
 import ExportButton from 'components/ExportButton.vue'
-import { useExport, type ExportColumn } from 'composables/useExport'
+import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const teachersStore = useTeachersStore()
