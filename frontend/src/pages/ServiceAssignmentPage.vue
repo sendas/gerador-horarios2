@@ -869,12 +869,13 @@ async function openComponentDialog() {
       id: number; name: string; birth_date: string | null
       teaching_component: number | null; credit_hours: number | null; credit_role: string | null
       base_teaching_hours: number | null; te_hours: number | null; te_role: string | null
+      art79_reduction: number | null; art79_manual: boolean | null
     }
     compRows.value = (data as ApiTeacher[]).map(t => {
       const base_teaching_hours = t.base_teaching_hours ?? 22
       const art79Auto = t.birth_date ? calcArt79(t.birth_date) : 0
-      const art79_reduction = art79Auto
-      const art79_manual = false
+      const art79_manual = t.art79_manual ?? false
+      const art79_reduction = art79_manual ? (t.art79_reduction ?? 0) : art79Auto
       let te_role: TeAllocation[] = []
       if (t.te_role) {
         try {
@@ -939,6 +940,8 @@ async function saveComponents() {
       te_role: r.te_role.length ? JSON.stringify(r.te_role) : null,
       credit_hours: creditTotal(r),
       credit_role: r.credit_role.length ? JSON.stringify(r.credit_role) : null,
+      art79_reduction: r.art79_reduction,
+      art79_manual: r.art79_manual,
     }))
     await api.put('/teachers/bulk-update', payload)
     await teachersStore.fetchAll()

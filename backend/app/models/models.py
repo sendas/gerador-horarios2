@@ -198,6 +198,8 @@ class Teacher(Base):
     te_hours = Column(Integer, nullable=True, default=3)            # TE — Trabalho no Estabelecimento
     te_role = Column(String, nullable=True)                         # cargo associado ao TE
     credit_role = Column(String, nullable=True)                     # cargo associado ao crédito horário
+    art79_reduction = Column(Integer, nullable=True, default=0)     # redução Art. 79° (horas)
+    art79_manual = Column(Boolean, nullable=True, default=False)    # True se editado manualmente
 
     cluster = relationship("Cluster", back_populates="teachers")
     school_assignments = relationship("TeacherSchoolAssignment", back_populates="teacher", cascade="all, delete-orphan")

@@ -27,6 +27,8 @@ class BulkTeacherUpdate(BaseModel):
     te_hours: Optional[int] = None
     te_role: Optional[str] = None
     credit_role: Optional[str] = None
+    art79_reduction: Optional[int] = None
+    art79_manual: Optional[bool] = None
 
 
 class BulkComponentRequest(BaseModel):
@@ -137,6 +139,10 @@ def bulk_update_teachers(items: List[BulkTeacherUpdate], db: Session = Depends(g
             t.base_teaching_hours = item.base_teaching_hours
         if item.te_hours is not None:
             t.te_hours = item.te_hours
+        if item.art79_reduction is not None:
+            t.art79_reduction = item.art79_reduction
+        if item.art79_manual is not None:
+            t.art79_manual = item.art79_manual
         updated.append(t.id)
     db.commit()
     return {"updated": updated}

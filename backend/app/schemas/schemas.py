@@ -258,6 +258,8 @@ class TeacherBase(BaseModel):
     te_hours: Optional[int] = 3
     te_role: Optional[str] = None
     credit_role: Optional[str] = None
+    art79_reduction: Optional[int] = 0
+    art79_manual: Optional[bool] = False
 
 class TeacherCreate(TeacherBase):
     pass
@@ -279,6 +281,8 @@ class TeacherUpdate(BaseModel):
     te_hours: Optional[int] = None
     te_role: Optional[str] = None
     credit_role: Optional[str] = None
+    art79_reduction: Optional[int] = None
+    art79_manual: Optional[bool] = None
 
 class TeacherResponse(TeacherBase):
     model_config = ConfigDict(from_attributes=True)
