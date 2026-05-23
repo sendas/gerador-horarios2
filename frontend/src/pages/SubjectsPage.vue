@@ -168,11 +168,18 @@ const colorPalette = [
 ]
 
 const structureOptions = [
-  { value: '1',     label: '1 tempo / semana',          hint: '1 tempo isolado',           blocks: [1] },
-  { value: '1+1',   label: '2 tempos separados',         hint: 'Dois isolados',              blocks: [1, 1] },
-  { value: '2',     label: 'Bloco duplo',                hint: '2 consecutivos',             blocks: [2] },
-  { value: '2+1',   label: 'Bloco + 1 separado',        hint: 'Mais comum (3 tempos)',      blocks: [2, 1] },
-  { value: '1+1+1', label: '3 tempos separados',         hint: 'Três isolados',              blocks: [1, 1, 1] },
+  { value: '1',       label: '1 tempo / semana',              hint: 'Uma aula isolada',                    blocks: [1] },
+  { value: '1+1',     label: '2 tempos separados',             hint: 'Duas aulas em dias diferentes',       blocks: [1, 1] },
+  { value: '1+1+1',   label: '3 tempos separados',             hint: 'Três aulas em dias diferentes',       blocks: [1, 1, 1] },
+  { value: '1+1+1+1', label: '4 tempos separados',             hint: 'Quatro aulas em dias diferentes',     blocks: [1, 1, 1, 1] },
+  { value: '2',       label: 'Bloco duplo',                    hint: '2 aulas consecutivas',                blocks: [2] },
+  { value: '2+1',     label: 'Bloco duplo + 1 separado',       hint: 'O mais comum (3 tempos)',             blocks: [2, 1] },
+  { value: '2+1+1',   label: 'Bloco duplo + 2 separados',      hint: '4 tempos: 1 bloco + 2 isolados',      blocks: [2, 1, 1] },
+  { value: '2+2',     label: 'Dois blocos duplos',             hint: '4 tempos em 2 blocos',                blocks: [2, 2] },
+  { value: '2+2+1',   label: 'Dois blocos duplos + 1 separado',hint: '5 tempos: 2 blocos + 1 isolado',      blocks: [2, 2, 1] },
+  { value: '3',       label: 'Bloco triplo',                   hint: '3 aulas consecutivas',                blocks: [3] },
+  { value: '3+1',     label: 'Bloco triplo + 1 separado',      hint: '4 tempos: 1 bloco de 3 + 1 isolado',  blocks: [3, 1] },
+  { value: '3+2',     label: 'Bloco triplo + bloco duplo',     hint: '5 tempos: 1 bloco de 3 + 1 de 2',    blocks: [3, 2] },
 ]
 
 function structureLabel(v: string) {

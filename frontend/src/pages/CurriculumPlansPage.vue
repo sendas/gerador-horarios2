@@ -444,13 +444,18 @@ const entryForm = ref({
 })
 
 const structureOptions = [
-  { label: '1 (uma aula)', value: '1' },
-  { label: '1+1 (duas aulas separadas)', value: '1+1' },
-  { label: '1+1+1 (três aulas separadas)', value: '1+1+1' },
-  { label: '2 (bloco de 2)', value: '2' },
-  { label: '2+1 (bloco de 2 + 1 aula)', value: '2+1' },
-  { label: '2+2 (dois blocos de 2)', value: '2+2' },
-  { label: '3 (bloco de 3)', value: '3' },
+  { label: '1 — uma aula por semana', value: '1' },
+  { label: '1+1 — duas aulas separadas', value: '1+1' },
+  { label: '1+1+1 — três aulas separadas', value: '1+1+1' },
+  { label: '1+1+1+1 — quatro aulas separadas', value: '1+1+1+1' },
+  { label: '2 — bloco de 2 aulas', value: '2' },
+  { label: '2+1 — bloco de 2 + 1 aula', value: '2+1' },
+  { label: '2+1+1 — bloco de 2 + 2 aulas separadas', value: '2+1+1' },
+  { label: '2+2 — dois blocos de 2', value: '2+2' },
+  { label: '2+2+1 — dois blocos de 2 + 1 aula', value: '2+2+1' },
+  { label: '3 — bloco de 3 aulas', value: '3' },
+  { label: '3+1 — bloco de 3 + 1 aula', value: '3+1' },
+  { label: '3+2 — bloco de 3 + bloco de 2', value: '3+2' },
 ]
 
 const columns = [

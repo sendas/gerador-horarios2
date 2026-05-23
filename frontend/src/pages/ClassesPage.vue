@@ -179,20 +179,12 @@
                 </div>
                 <div class="row items-center q-gutter-sm">
                   <!-- 1.ª metade -->
-                  <q-card flat bordered class="col q-pa-sm" style="min-width:150px">
+                  <q-card flat bordered class="col q-pa-sm" style="min-width:120px">
                     <div class="text-caption text-grey-6 q-mb-xs">1.ª metade</div>
-                    <div v-if="group.entries[0]" class="text-body2 text-weight-medium text-secondary q-mb-sm">
+                    <div v-if="group.entries[0]" class="text-body2 text-weight-medium text-secondary">
                       {{ entrySubjectName(group.entries[0].curriculum_entry_id) }}
                     </div>
-                    <div v-else class="text-caption text-grey-4 text-italic q-mb-sm">sem disciplina</div>
-                    <q-select
-                      v-if="group.entries[0]"
-                      :model-value="entryStructure(group.entries[0].curriculum_entry_id)"
-                      :options="structureOptions"
-                      label="Estrutura semanal"
-                      emit-value map-options dense outlined
-                      @update:model-value="updateEntryStructure(group.entries[0].curriculum_entry_id, $event)"
-                    />
+                    <div v-else class="text-caption text-grey-4 text-italic">sem disciplina</div>
                   </q-card>
                   <!-- separador simultâneo -->
                   <div class="col-auto text-center text-grey-5 q-px-xs">
@@ -200,20 +192,12 @@
                     <span class="text-caption" style="font-size:10px">simultâneo</span>
                   </div>
                   <!-- 2.ª metade -->
-                  <q-card flat bordered class="col q-pa-sm" style="min-width:150px">
+                  <q-card flat bordered class="col q-pa-sm" style="min-width:120px">
                     <div class="text-caption text-grey-6 q-mb-xs">2.ª metade</div>
-                    <div v-if="group.entries[1]" class="text-body2 text-weight-medium text-secondary q-mb-sm">
+                    <div v-if="group.entries[1]" class="text-body2 text-weight-medium text-secondary">
                       {{ entrySubjectName(group.entries[1].curriculum_entry_id) }}
                     </div>
-                    <div v-else class="text-caption text-grey-4 text-italic q-mb-sm">sem disciplina</div>
-                    <q-select
-                      v-if="group.entries[1]"
-                      :model-value="entryStructure(group.entries[1].curriculum_entry_id)"
-                      :options="structureOptions"
-                      label="Estrutura semanal"
-                      emit-value map-options dense outlined
-                      @update:model-value="updateEntryStructure(group.entries[1].curriculum_entry_id, $event)"
-                    />
+                    <div v-else class="text-caption text-grey-4 text-italic">sem disciplina</div>
                   </q-card>
                 </div>
               </q-item-section>
@@ -253,14 +237,6 @@
               :options="availableEntriesForNew"
               label="Disciplina A *"
               emit-value map-options
-              class="q-mb-xs"
-            />
-            <q-select
-              v-if="newGroupForm.entry1"
-              v-model="newGroupForm.structure1"
-              :options="structureOptions"
-              label="Estrutura semanal da Disciplina A"
-              emit-value map-options dense outlined
             />
           </div>
           <div>
@@ -272,14 +248,6 @@
               emit-value map-options
               :disable="!newGroupForm.entry1"
               :hint="!newGroupForm.entry1 ? 'Seleciona primeiro a Disciplina A' : ''"
-              class="q-mb-xs"
-            />
-            <q-select
-              v-if="newGroupForm.entry2"
-              v-model="newGroupForm.structure2"
-              :options="structureOptions"
-              label="Estrutura semanal da Disciplina B"
-              emit-value map-options dense outlined
             />
           </div>
         </q-card-section>
@@ -298,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useClassesStore, type SchoolClass, type CurriculumEntry } from 'stores/classes'
 import { useSchoolsStore } from 'stores/schools'
@@ -361,55 +329,9 @@ interface SubjectGroupEntry { id: number; group_id: number; curriculum_entry_id:
 interface SubjectGroupItem { id: number; name: string; academic_year_id: number; entries: SubjectGroupEntry[] }
 const subjectGroups = ref<SubjectGroupItem[]>([])
 
-const structureOptions = [
-  { label: '1 tempo / semana', value: '1' },
-  { label: '2 tempos separados (1+1)', value: '1+1' },
-  { label: 'Bloco duplo — 2 consecutivos (2)', value: '2' },
-  { label: 'Bloco duplo + 1 separado (2+1)', value: '2+1' },
-  { label: '3 tempos separados (1+1+1)', value: '1+1+1' },
-  { label: '2 blocos duplos (2+2)', value: '2+2' },
-  { label: 'Bloco triplo (3)', value: '3' },
-]
-
-function parseStructure(ws: string): { split_count: number; consecutive_pairs: number; is_split: boolean } {
-  if (!ws || ws.trim() === '1') return { split_count: 1, consecutive_pairs: 0, is_split: false }
-  const parts = ws.trim().split('+').map(Number)
-  const split_count = parts.reduce((a, b) => a + b, 0)
-  const consecutive_pairs = parts.filter(p => p >= 2).length
-  return { split_count, consecutive_pairs, is_split: split_count > 1 }
-}
-
-function entryStructure(curriculum_entry_id: number): string {
-  const e = curriculumEntries.value.find(e => e.id === curriculum_entry_id)
-  if (!e) return '1+1'
-  const { split_count, consecutive_pairs } = e
-  if (split_count <= 1) return '1'
-  if (consecutive_pairs === 0) return Array(split_count).fill('1').join('+')
-  if (split_count === 2 && consecutive_pairs === 1) return '2'
-  if (split_count === 3 && consecutive_pairs === 1) return '2+1'
-  if (split_count === 4 && consecutive_pairs === 2) return '2+2'
-  if (split_count === 3 && consecutive_pairs === 0) return '1+1+1'
-  if (split_count === 3 && consecutive_pairs >= 1) return '3'
-  return Array(split_count).fill('1').join('+')
-}
-
-async function updateEntryStructure(curriculum_entry_id: number, ws: string) {
-  const parsed = parseStructure(ws)
-  await classesStore.updateCurriculumEntry(curriculum_entry_id, parsed)
-  const e = curriculumEntries.value.find(e => e.id === curriculum_entry_id)
-  if (e) { e.split_count = parsed.split_count; e.consecutive_pairs = parsed.consecutive_pairs; e.is_split = parsed.is_split }
-}
-
 const newGroupDialog = ref(false)
 const creatingGroup = ref(false)
-const newGroupForm = ref({ name: '', entry1: null as number | null, entry2: null as number | null, structure1: '1+1', structure2: '1+1' })
-
-watch(() => newGroupForm.value.entry1, (id) => {
-  if (id) newGroupForm.value.structure1 = entryStructure(id)
-})
-watch(() => newGroupForm.value.entry2, (id) => {
-  if (id) newGroupForm.value.structure2 = entryStructure(id)
-})
+const newGroupForm = ref({ name: '', entry1: null as number | null, entry2: null as number | null })
 
 const entriesNotInAnyGroup = computed(() => {
   const inGroup = new Set(subjectGroups.value.flatMap(g => g.entries.map(e => e.curriculum_entry_id)))
@@ -450,26 +372,12 @@ async function createGroup() {
   try {
     const yearId = selectedClass.value.academic_year_id
     const name = newGroupForm.value.name.trim() || `Turno ${subjectGroups.value.length + 1}`
-    const [{ data: group }] = await Promise.all([
-      api.post<SubjectGroupItem>('/subject-groups', { name, academic_year_id: yearId }),
-    ])
+    const { data: group } = await api.post<SubjectGroupItem>('/subject-groups', { name, academic_year_id: yearId })
     const [r1, r2] = await Promise.all([
       api.post<SubjectGroupEntry>(`/subject-groups/${group.id}/entries`, { curriculum_entry_id: newGroupForm.value.entry1 }),
       api.post<SubjectGroupEntry>(`/subject-groups/${group.id}/entries`, { curriculum_entry_id: newGroupForm.value.entry2 }),
     ])
     group.entries = [r1.data, r2.data]
-    // save weekly structures if changed from defaults
-    const s1 = parseStructure(newGroupForm.value.structure1)
-    const s2 = parseStructure(newGroupForm.value.structure2)
-    await Promise.all([
-      classesStore.updateCurriculumEntry(newGroupForm.value.entry1!, s1),
-      classesStore.updateCurriculumEntry(newGroupForm.value.entry2!, s2),
-    ])
-    // reflect in local curriculumEntries
-    for (const [eid, s] of [[newGroupForm.value.entry1!, s1], [newGroupForm.value.entry2!, s2]] as [number, ReturnType<typeof parseStructure>][]) {
-      const e = curriculumEntries.value.find(e => e.id === eid)
-      if (e) { e.split_count = s.split_count; e.consecutive_pairs = s.consecutive_pairs; e.is_split = s.is_split }
-    }
     subjectGroups.value.push(group)
     newGroupDialog.value = false
   } finally {
