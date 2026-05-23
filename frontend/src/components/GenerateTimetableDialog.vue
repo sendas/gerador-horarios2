@@ -338,7 +338,6 @@ async function generate() {
 <style scoped>
 .gen-dialog {
   border-radius: 14px;
-  overflow: hidden;
 }
 .gen-dialog__header {
   display: flex;
@@ -346,6 +345,7 @@ async function generate() {
   padding: 16px 20px;
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 70%, #06b6d4 100%);
   color: #fff;
+  border-radius: 14px 14px 0 0;
 }
 .gen-dialog__title {
   display: flex;
@@ -358,6 +358,7 @@ async function generate() {
   padding: 12px 20px 16px;
   border-top: 1px solid rgba(15, 23, 42, 0.06);
   background: #fafbff;
+  border-radius: 0 0 14px 14px;
 }
 .body--dark .gen-dialog__actions {
   background: rgba(255, 255, 255, 0.03);
