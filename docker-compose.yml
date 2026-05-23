@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/gerador_horarios.db
+      - SECRET_KEY=${SECRET_KEY:-muda-esta-chave-para-algo-secreto-e-longo}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      - SOLVER_MAX_MEMORY_MB=${SOLVER_MAX_MEMORY_MB:-768}
+      - SOLVER_WORKERS=${SOLVER_WORKERS:-0}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    expose:
+      - "8000"
+    mem_limit: ${BACKEND_MEM_LIMIT:-1536m}
+    memswap_limit: ${BACKEND_MEM_LIMIT:-1536m}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-61100}:80"
+    mem_limit: ${FRONTEND_MEM_LIMIT:-128m}
+    memswap_limit: ${FRONTEND_MEM_LIMIT:-128m}
+    depends_on:
+      backend:
+        condition: service_healthy
