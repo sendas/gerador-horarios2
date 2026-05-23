@@ -1,10 +1,14 @@
 <template>
   <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" persistent>
-    <q-card style="min-width:600px;max-width:760px">
-      <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6"><q-icon name="auto_awesome" class="q-mr-sm" />Gerar Horário</div>
-        <q-space /><q-btn icon="close" flat round dense v-close-popup />
-      </q-card-section>
+    <q-card class="gen-dialog" style="min-width:600px;max-width:760px">
+      <div class="gen-dialog__header">
+        <div class="gen-dialog__title">
+          <q-icon name="auto_awesome" size="22px" class="q-mr-sm" />
+          <span>Gerar Horário</span>
+        </div>
+        <q-space />
+        <q-btn icon="close" flat round dense color="white" v-close-popup data-testid="gen-dialog-close" />
+      </div>
 
       <q-card-section class="q-gutter-md">
 
@@ -126,10 +130,11 @@
 
       </q-card-section>
 
-      <q-card-actions align="right" class="q-px-md q-pb-md">
-        <q-btn flat label="Cancelar" v-close-popup />
-        <q-btn color="primary" icon="play_arrow" label="Gerar Horário"
+      <q-card-actions align="right" class="gen-dialog__actions">
+        <q-btn flat label="Cancelar" v-close-popup data-testid="gen-dialog-cancel" />
+        <q-btn color="primary" icon="play_arrow" label="Gerar Horário" unelevated
           :loading="loading" :disable="effectiveCount === 0"
+          data-testid="gen-dialog-generate"
           @click="generate" />
       </q-card-actions>
     </q-card>
@@ -329,3 +334,33 @@ async function generate() {
   }
 }
 </script>
+
+<style scoped>
+.gen-dialog {
+  border-radius: 14px;
+  overflow: hidden;
+}
+.gen-dialog__header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 70%, #06b6d4 100%);
+  color: #fff;
+}
+.gen-dialog__title {
+  display: flex;
+  align-items: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.gen-dialog__actions {
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  background: #fafbff;
+}
+.body--dark .gen-dialog__actions {
+  background: rgba(255, 255, 255, 0.03);
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+</style>

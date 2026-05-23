@@ -91,6 +91,11 @@
                 dense outlined
                 placeholder="0"
                 hint="Ex: apoio à direção, coordenação..."
+                :loading="savingCreditHours"
+                data-testid="credit-hours-input"
+                @change="saveCreditHours"
+                @blur="saveCreditHours"
+                @keyup.enter="saveCreditHours"
               />
             </q-card-section>
           </template>
@@ -530,6 +535,8 @@ const selectedTeacherId = ref<number | null>(null)
 const allEntries = ref<Entry[]>([])
 const teacherSubjectIds = ref<number[]>([])
 const creditHours = ref(0)
+const savingCreditHours = ref(false)
+const lastSavedCreditHours = ref<number | null>(null)
 const yearFilter = ref<Set<number>>(new Set())
 const loadingSubjects = ref(false)
 const teacherFilterText = ref('')
@@ -682,12 +689,41 @@ async function onTeacherChange() {
   // Pre-populate credit hours from stored value
   const t = teachersStore.teachers.find((t) => t.id === selectedTeacherId.value)
   creditHours.value = t?.credit_hours ?? 0
+  lastSavedCreditHours.value = creditHours.value
   loadingSubjects.value = true
   try {
     const { data } = await api.get(`/teachers/${selectedTeacherId.value}/subjects`)
     teacherSubjectIds.value = (data as { subject_id: number }[]).map((ts) => ts.subject_id)
   } finally {
     loadingSubjects.value = false
+  }
+}
+
+// Persist the "Horas de crédito / redução" input back to the teacher.
+// Triggered on blur / change / Enter — avoids saving on every keystroke.
+// No-op when value hasn't changed since the last successful save.
+async function saveCreditHours() {
+  if (!selectedTeacherId.value) return
+  const value = Number.isFinite(creditHours.value) ? Number(creditHours.value) : 0
+  if (value === lastSavedCreditHours.value) return
+  savingCreditHours.value = true
+  try {
+    await api.put('/teachers/bulk-update', [
+      { id: selectedTeacherId.value, credit_hours: value },
+    ])
+    // Mirror update in the store so the UI stays consistent without a refetch
+    const t = teachersStore.teachers.find((tt) => tt.id === selectedTeacherId.value)
+    if (t) t.credit_hours = value
+    lastSavedCreditHours.value = value
+    $q.notify({
+      type: 'positive',
+      message: `Horas de crédito guardadas (${value}h)`,
+      timeout: 1200,
+    })
+  } catch {
+    $q.notify({ type: 'negative', message: 'Erro ao guardar horas de crédito' })
+  } finally {
+    savingCreditHours.value = false
   }
 }
 
