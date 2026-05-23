@@ -21,7 +21,7 @@
       <!-- Header -->
       <q-card-section class="row items-center q-py-sm" :class="$q.dark.isActive ? 'bg-blue-grey-9' : 'bg-primary'">
         <q-icon name="smart_toy" color="white" class="q-mr-sm" size="sm" />
-        <span class="text-subtitle1 text-weight-medium text-white">Assistente Sinaptik</span>
+        <span class="text-subtitle1 text-weight-medium text-white">Assistente Sinaptik2</span>
         <q-space />
         <q-btn flat round dense icon="delete_outline" color="white" @click="clearChat">
           <q-tooltip>Limpar conversa</q-tooltip>

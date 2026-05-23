@@ -24,7 +24,7 @@
             <q-icon name="hub" size="54px" color="white" />
           </div>
 
-          <div class="brand-title">Sinaptik</div>
+          <div class="brand-title">Sinaptik2</div>
           <div class="brand-tagline">
             Plataforma inteligente de horários escolares.<br>
             <span class="tagline-accent">O sistema mais completo para criação automática de horários para agrupamentos escolares</span>

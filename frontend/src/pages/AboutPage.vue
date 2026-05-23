@@ -5,7 +5,7 @@
       <div class="hero__icon-wrap">
         <q-icon name="hub" size="48px" color="white" />
       </div>
-      <div class="hero__title">Sinaptik</div>
+      <div class="hero__title">Sinaptik2</div>
       <q-badge class="hero__badge">v{{ appVersion }}</q-badge>
       <div class="hero__subtitle">
         Plataforma Inteligente de Horários — o sistema mais completo para criação automática de horários para agrupamentos escolares
@@ -1016,7 +1016,7 @@
               <div class="row items-center q-mb-md">
                 <q-icon name="hub" color="primary" size="32px" class="q-mr-md" />
                 <div>
-                  <div class="text-h6" style="font-weight:700">Sinaptik</div>
+                  <div class="text-h6" style="font-weight:700">Sinaptik2</div>
                   <div class="text-caption text-grey-6">Plataforma Inteligente de Horários Escolares</div>
                 </div>
                 <q-space />

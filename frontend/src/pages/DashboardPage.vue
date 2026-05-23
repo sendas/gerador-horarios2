@@ -7,7 +7,7 @@
       <div class="dash-hero__inner">
         <div class="dash-hero__brand">
           <q-icon name="hub" size="44px" class="dash-hero__brand-icon" />
-          <span class="dash-hero__brand-name">Sinaptik</span>
+          <span class="dash-hero__brand-name">Sinaptik2</span>
         </div>
         <h1 class="dash-hero__title">
           Horários escolares,<br />
@@ -116,7 +116,7 @@
 
     <!-- Footer -->
     <footer class="dash-footer">
-      © {{ new Date().getFullYear() }} Sinaptik —
+      © {{ new Date().getFullYear() }} Sinaptik2 —
       <q-icon name="auto_awesome" size="xs" class="q-mr-xs" />
       Horários inteligentes ·
       <a href="https://github.com/sendas/gerador-horarios" target="_blank" class="dash-footer__link">GitHub</a>
