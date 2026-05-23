@@ -87,8 +87,8 @@
       <q-card style="max-width:860px;width:100%">
         <q-card-section class="row items-center bg-secondary text-white">
           <div>
-            <div class="text-h6"><q-icon name="call_split" class="q-mr-sm" />Turnos e Grupos — {{ selectedClass?.name }}</div>
-            <div class="text-caption opacity-80">Disciplinas que ocorrem em simultâneo para subgrupos da turma</div>
+            <div class="text-h6"><q-icon name="call_split" class="q-mr-sm" />Turnos — {{ selectedClass?.name }}</div>
+            <div class="text-caption opacity-80">Cada turno define duas disciplinas que decorrem ao mesmo tempo, em salas e com professores diferentes</div>
           </div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup />
@@ -126,42 +126,108 @@
 
           <!-- Subject groups / turnos -->
           <div class="row items-center q-mb-sm">
-            <div class="text-subtitle2 col">Turnos (grupos de disciplinas simultâneas)</div>
-            <q-btn color="secondary" icon="add" size="sm" label="Novo turno" unelevated @click="openAddGroup" />
+            <div class="col">
+              <div class="text-subtitle2">Turnos definidos</div>
+              <div class="text-caption text-grey-6">Metade da turma tem a disciplina da esquerda enquanto a outra metade tem a da direita</div>
+            </div>
+            <q-btn color="secondary" icon="add" size="sm" label="Novo turno" unelevated @click="openNewGroupDialog" />
           </div>
-          <div v-if="subjectGroups.length === 0" class="text-caption text-grey-6 q-py-sm">
-            Nenhum turno definido. Use turnos quando metade da turma tem uma disciplina e a outra metade tem outra ao mesmo tempo (ex: CN e FQ em laboratório).
+
+          <div v-if="subjectGroups.length === 0" class="text-caption text-grey-6 q-py-md text-center">
+            <q-icon name="call_split" size="lg" color="grey-4" class="q-mb-xs block" />
+            Nenhum turno definido.<br>
+            Exemplo: CN e FQ em laboratório — metade da turma tem CN enquanto a outra tem FQ.
           </div>
-          <div v-for="group in subjectGroups" :key="group.id" class="q-mb-xs row items-center">
-            <q-icon name="call_split" class="q-mr-xs text-secondary" />
-            <span class="text-body2 q-mr-sm">{{ group.name }}</span>
-            <q-chip
-              v-for="ge in group.entries" :key="ge.id"
-              dense removable
-              @remove="removeGroupEntry(group.id, ge.id)"
-              color="secondary" text-color="white" size="sm"
-            >
-              {{ entrySubjectName(ge.curriculum_entry_id) }}
-            </q-chip>
-            <q-btn unelevated size="sm" color="secondary" icon="add_circle" label="Adicionar" @click="openAddEntryToGroup(group)" class="q-ml-xs" />
-            <q-space />
-            <q-btn flat size="sm" color="negative" icon="delete" label="Apagar turno" @click="deleteGroup(group.id)" />
-          </div>
+
+          <q-list v-else bordered separator class="rounded-borders">
+            <q-item v-for="group in subjectGroups" :key="group.id" class="q-py-sm">
+              <q-item-section>
+                <div v-if="group.name" class="text-caption text-weight-medium text-grey-7 q-mb-xs">
+                  <q-icon name="call_split" size="xs" color="secondary" class="q-mr-xs" />{{ group.name }}
+                </div>
+                <div class="row items-center q-gutter-sm">
+                  <!-- 1.ª metade -->
+                  <q-card flat bordered class="col q-pa-sm" style="min-width:120px">
+                    <div class="text-caption text-grey-6 q-mb-xs">1.ª metade</div>
+                    <div v-if="group.entries[0]" class="text-body2 text-weight-medium text-secondary">
+                      {{ entrySubjectName(group.entries[0].curriculum_entry_id) }}
+                    </div>
+                    <div v-else class="text-caption text-grey-4 text-italic">sem disciplina</div>
+                  </q-card>
+                  <!-- separador simultâneo -->
+                  <div class="col-auto text-center text-grey-5 q-px-xs">
+                    <q-icon name="swap_horiz" size="sm" /><br>
+                    <span class="text-caption" style="font-size:10px">simultâneo</span>
+                  </div>
+                  <!-- 2.ª metade -->
+                  <q-card flat bordered class="col q-pa-sm" style="min-width:120px">
+                    <div class="text-caption text-grey-6 q-mb-xs">2.ª metade</div>
+                    <div v-if="group.entries[1]" class="text-body2 text-weight-medium text-secondary">
+                      {{ entrySubjectName(group.entries[1].curriculum_entry_id) }}
+                    </div>
+                    <div v-else class="text-caption text-grey-4 text-italic">sem disciplina</div>
+                  </q-card>
+                </div>
+              </q-item-section>
+              <q-item-section side top>
+                <q-btn flat round size="sm" color="negative" icon="delete" @click="deleteGroup(group.id)">
+                  <q-tooltip>Apagar turno</q-tooltip>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </q-card-section>
       </q-card>
     </q-dialog>
 
-    <!-- Add group entry dialog -->
-    <q-dialog v-model="addGroupEntryDialog">
-      <q-card style="min-width: 300px">
-        <q-card-section><div class="text-h6">Adicionar ao Turno</div></q-card-section>
-        <q-card-section>
-          <q-select v-model="groupEntryForm.curriculum_entry_id" :options="availableForGroupOptions" label="Disciplina" emit-value map-options />
-          <div class="row justify-end q-mt-md q-gutter-sm">
-            <q-btn flat label="Cancelar" v-close-popup />
-            <q-btn color="secondary" label="Adicionar" @click="addEntryToGroup" />
+    <!-- New group dialog -->
+    <q-dialog v-model="newGroupDialog">
+      <q-card style="min-width: 440px">
+        <q-card-section class="bg-secondary text-white row items-center">
+          <div>
+            <div class="text-h6"><q-icon name="call_split" class="q-mr-sm" />Novo Turno</div>
+            <div class="text-caption opacity-80">As duas disciplinas ocorrem ao mesmo tempo, com professores e salas diferentes</div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-gutter-md">
+          <q-input
+            v-model="newGroupForm.name"
+            label="Nome do turno (opcional)"
+            hint='Ex: "Turno Lab", "CN / FQ"'
+            clearable
+          />
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">1.ª metade da turma</div>
+            <q-select
+              v-model="newGroupForm.entry1"
+              :options="availableEntriesForNew"
+              label="Disciplina A *"
+              emit-value map-options
+            />
+          </div>
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">2.ª metade da turma — ocorre ao mesmo tempo que A</div>
+            <q-select
+              v-model="newGroupForm.entry2"
+              :options="availableEntriesForNew2"
+              label="Disciplina B *"
+              emit-value map-options
+              :disable="!newGroupForm.entry1"
+              :hint="!newGroupForm.entry1 ? 'Seleciona primeiro a Disciplina A' : ''"
+            />
           </div>
         </q-card-section>
+        <q-card-actions align="right" class="q-px-md q-pb-md">
+          <q-btn flat label="Cancelar" v-close-popup />
+          <q-btn
+            color="secondary" icon="add" label="Criar Turno"
+            @click="createGroup"
+            :disable="!newGroupForm.entry1 || !newGroupForm.entry2"
+            :loading="creatingGroup"
+          />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-page>
@@ -230,18 +296,25 @@ function subjectName(id: number) {
 interface SubjectGroupEntry { id: number; group_id: number; curriculum_entry_id: number }
 interface SubjectGroupItem { id: number; name: string; academic_year_id: number; entries: SubjectGroupEntry[] }
 const subjectGroups = ref<SubjectGroupItem[]>([])
-const addGroupEntryDialog = ref(false)
-const selectedGroupForEntry = ref<SubjectGroupItem | null>(null)
-const groupEntryForm = ref({ curriculum_entry_id: null as number | null })
 
-const availableForGroupOptions = computed(() => {
-  const inGroup = new Set(
-    subjectGroups.value.flatMap(g => g.entries.map(e => e.curriculum_entry_id))
-  )
-  return curriculumEntries.value
-    .filter(e => !inGroup.has(e.id))
-    .map(e => ({ label: subjectName(e.subject_id), value: e.id }))
+const newGroupDialog = ref(false)
+const creatingGroup = ref(false)
+const newGroupForm = ref({ name: '', entry1: null as number | null, entry2: null as number | null })
+
+const entriesNotInAnyGroup = computed(() => {
+  const inGroup = new Set(subjectGroups.value.flatMap(g => g.entries.map(e => e.curriculum_entry_id)))
+  return curriculumEntries.value.filter(e => !inGroup.has(e.id))
 })
+
+const availableEntriesForNew = computed(() =>
+  entriesNotInAnyGroup.value.map(e => ({ label: subjectName(e.subject_id), value: e.id }))
+)
+
+const availableEntriesForNew2 = computed(() =>
+  entriesNotInAnyGroup.value
+    .filter(e => e.id !== newGroupForm.value.entry1)
+    .map(e => ({ label: subjectName(e.subject_id), value: e.id }))
+)
 
 function entrySubjectName(curriculum_entry_id: number) {
   const e = curriculumEntries.value.find(e => e.id === curriculum_entry_id)
@@ -256,35 +329,28 @@ async function loadSubjectGroups() {
   subjectGroups.value = data.filter(g => g.entries.some(e => classEntryIds.has(e.curriculum_entry_id)))
 }
 
-async function openAddGroup() {
-  if (!selectedClass.value) return
-  const yearId = selectedClass.value.academic_year_id
-  const name = `Turno ${selectedClass.value.name}`
-  const { data } = await api.post<SubjectGroupItem>('/subject-groups', { name, academic_year_id: yearId })
-  subjectGroups.value.push(data)
+function openNewGroupDialog() {
+  newGroupForm.value = { name: '', entry1: null, entry2: null }
+  newGroupDialog.value = true
 }
 
-function openAddEntryToGroup(group: SubjectGroupItem) {
-  selectedGroupForEntry.value = group
-  groupEntryForm.value = { curriculum_entry_id: null }
-  addGroupEntryDialog.value = true
-}
-
-async function addEntryToGroup() {
-  if (!selectedGroupForEntry.value || !groupEntryForm.value.curriculum_entry_id) return
-  const { data } = await api.post<SubjectGroupEntry>(
-    `/subject-groups/${selectedGroupForEntry.value.id}/entries`,
-    { curriculum_entry_id: groupEntryForm.value.curriculum_entry_id }
-  )
-  const group = subjectGroups.value.find(g => g.id === selectedGroupForEntry.value!.id)
-  if (group) group.entries.push(data)
-  addGroupEntryDialog.value = false
-}
-
-async function removeGroupEntry(groupId: number, entryId: number) {
-  await api.delete(`/subject-groups/${groupId}/entries/${entryId}`)
-  const group = subjectGroups.value.find(g => g.id === groupId)
-  if (group) group.entries = group.entries.filter(e => e.id !== entryId)
+async function createGroup() {
+  if (!selectedClass.value || !newGroupForm.value.entry1 || !newGroupForm.value.entry2) return
+  creatingGroup.value = true
+  try {
+    const yearId = selectedClass.value.academic_year_id
+    const name = newGroupForm.value.name.trim() || `Turno ${subjectGroups.value.length + 1}`
+    const { data: group } = await api.post<SubjectGroupItem>('/subject-groups', { name, academic_year_id: yearId })
+    const [r1, r2] = await Promise.all([
+      api.post<SubjectGroupEntry>(`/subject-groups/${group.id}/entries`, { curriculum_entry_id: newGroupForm.value.entry1 }),
+      api.post<SubjectGroupEntry>(`/subject-groups/${group.id}/entries`, { curriculum_entry_id: newGroupForm.value.entry2 }),
+    ])
+    group.entries = [r1.data, r2.data]
+    subjectGroups.value.push(group)
+    newGroupDialog.value = false
+  } finally {
+    creatingGroup.value = false
+  }
 }
 
 async function deleteGroup(groupId: number) {
