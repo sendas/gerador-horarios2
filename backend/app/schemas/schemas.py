@@ -157,6 +157,7 @@ class ClassBase(BaseModel):
     year_level: int
     num_students: int = 25
     notes: Optional[str] = None
+    class_director_id: Optional[int] = None
 
 class ClassCreate(ClassBase):
     pass
@@ -166,10 +167,12 @@ class ClassUpdate(BaseModel):
     year_level: Optional[int] = None
     num_students: Optional[int] = None
     notes: Optional[str] = None
+    class_director_id: Optional[int] = None
 
 class ClassResponse(ClassBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+    class_director_name: Optional[str] = None
 
 
 # ── CurriculumEntry ───────────────────────────────────────────────────────────

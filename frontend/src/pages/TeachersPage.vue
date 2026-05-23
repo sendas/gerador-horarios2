@@ -61,7 +61,7 @@
             <q-chip v-for="s in props.row.subject_names" :key="s" size="sm" :label="s" color="blue-2" text-color="dark" class="q-mr-xs" />
             <span v-if="!props.row.subject_names?.length" class="text-grey-5">—</span>
           </q-td>
-          <q-td key="teaching_component" :props="props" class="text-center">{{ props.row.teaching_component ?? '—' }}</q-td>
+          <q-td key="teaching_component" :props="props" class="text-center">{{ props.row.teaching_component ?? '—' }}<q-tooltip>Componente Letiva líquida = CL base − Art.79° − Crédito H. (calculada em Distribuição de Serviço)</q-tooltip></q-td>
           <q-td key="max_daily_lessons" :props="props" class="text-center">{{ props.row.max_daily_lessons ?? '—' }}</q-td>
           <q-td key="preferred_free_day" :props="props" class="text-center">
             {{ props.row.preferred_free_day !== null && props.row.preferred_free_day !== undefined ? DAYS[props.row.preferred_free_day] : '—' }}
@@ -251,13 +251,13 @@
             <q-separator class="q-my-sm" />
             <div class="text-caption text-grey-6 q-mb-sm">Componente letiva</div>
             <q-input
-              v-model.number="form.teaching_component"
-              label="Horas letivas/semana"
+              v-model.number="form.base_teaching_hours"
+              label="CL base (componente letiva)"
               type="number"
               min="14"
-              max="22"
+              max="25"
               clearable
-              hint="Entre 14 e 22 horas letivas por semana"
+              hint="Horas letivas brutas antes de reduções (Art.79°, Crédito H.). O valor efetivo é calculado em Distribuição de Serviço."
             />
             <div class="row justify-end q-mt-md q-gutter-sm">
               <q-btn flat label="Cancelar" v-close-popup />
@@ -584,7 +584,7 @@ const columns = [
   { name: 'name', label: 'Nome', field: 'name', align: 'left' as const, sortable: true },
   { name: 'primary_school', label: 'Escola Base', field: 'primary_school_name', align: 'left' as const, sortable: true },
   { name: 'subject_names', label: 'Disciplinas', field: 'subject_names', align: 'left' as const },
-  { name: 'teaching_component', label: 'Comp. Letiva', field: 'teaching_component', align: 'center' as const },
+  { name: 'teaching_component', label: 'CL líq.', field: 'teaching_component', align: 'center' as const },
   { name: 'max_daily_lessons', label: 'Máx/dia', field: 'max_daily_lessons', align: 'center' as const },
   { name: 'preferred_free_day', label: 'Dia livre', field: 'preferred_free_day', align: 'center' as const },
   { name: 'actions', label: 'Ações', field: 'actions', align: 'center' as const },
@@ -607,7 +607,7 @@ const form = ref({
   max_end_slot: null as number | null,
   preferred_shift: null as string | null,
   max_consecutive_lessons: null as number | null,
-  teaching_component: null as number | null,
+  base_teaching_hours: 22 as number | null,
 })
 
 // Row expansion
@@ -938,7 +938,7 @@ function openCreate() {
     max_end_slot: null,
     preferred_shift: null,
     max_consecutive_lessons: null,
-    teaching_component: null,
+    base_teaching_hours: 22,
   }
   dialog.value = true
 }
@@ -955,7 +955,7 @@ function openEdit(row: Teacher) {
     max_end_slot: row.max_end_slot ?? null,
     preferred_shift: row.preferred_shift ?? null,
     max_consecutive_lessons: row.max_consecutive_lessons ?? null,
-    teaching_component: row.teaching_component ?? null,
+    base_teaching_hours: row.base_teaching_hours ?? 22,
   }
   dialog.value = true
 }
@@ -972,7 +972,7 @@ async function save() {
         max_end_slot: form.value.max_end_slot,
         preferred_shift: form.value.preferred_shift,
         max_consecutive_lessons: form.value.max_consecutive_lessons,
-        teaching_component: form.value.teaching_component,
+        base_teaching_hours: form.value.base_teaching_hours,
       }
       await teachersStore.update(editing.value.id, payload)
       $q.notify({ type: 'positive', message: 'Atualizado' })

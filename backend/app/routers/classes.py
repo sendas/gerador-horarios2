@@ -18,7 +18,13 @@ def list_classes(school_id: int = None, academic_year_id: int = None, db: Sessio
         q = q.filter(Class.school_id == school_id)
     if academic_year_id:
         q = q.filter(Class.academic_year_id == academic_year_id)
-    return q.all()
+    classes = q.all()
+    result = []
+    for c in classes:
+        d = ClassResponse.model_validate(c).model_dump()
+        d['class_director_name'] = c.class_director.name if c.class_director else None
+        result.append(d)
+    return result
 
 
 @router.get("/curriculum-overview")
@@ -75,7 +81,9 @@ def update_class(id: int, data: ClassUpdate, db: Session = Depends(get_db)):
         setattr(obj, field, value)
     db.commit()
     db.refresh(obj)
-    return obj
+    d = ClassResponse.model_validate(obj).model_dump()
+    d['class_director_name'] = obj.class_director.name if obj.class_director else None
+    return d
 
 
 @router.delete("/{id}", status_code=204)

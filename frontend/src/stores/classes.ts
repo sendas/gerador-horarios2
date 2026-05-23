@@ -10,6 +10,8 @@ export interface SchoolClass {
   year_level: number
   num_students: number
   notes?: string | null
+  class_director_id?: number | null
+  class_director_name?: string | null
 }
 
 export interface CurriculumEntry {

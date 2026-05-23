@@ -361,7 +361,7 @@
                       placeholder="Cargo..." style="min-width:180px"
                       @new-value="(val, done) => done(val)" />
                     <q-input v-model.number="alloc.hours" type="number" min="1" max="20"
-                      dense outlined style="width:65px" suffix="h" />
+                      dense outlined style="width:85px" suffix="h" />
                     <q-btn flat round dense size="xs" icon="close" color="grey-5"
                       @click="removeCreditAlloc(row, i)" />
                   </div>
@@ -380,7 +380,7 @@
                       placeholder="Cargo / Atividade..." style="min-width:180px"
                       @new-value="(val, done) => done(val)" />
                     <q-input v-model.number="alloc.hours" type="number" min="1" max="20"
-                      dense outlined style="width:65px" suffix="h" />
+                      dense outlined style="width:85px" suffix="h" />
                     <q-btn flat round dense size="xs" icon="close" color="grey-5"
                       @click="removeTeAlloc(row, i)" />
                   </div>

@@ -50,6 +50,12 @@
           </span>
         </q-td>
       </template>
+      <template #body-cell-class_director_name="props">
+        <q-td :props="props">
+          <span v-if="props.row.class_director_name" class="text-caption text-grey-8">{{ props.row.class_director_name }}</span>
+          <span v-else class="text-grey-4">—</span>
+        </q-td>
+      </template>
       <template #body-cell-actions="props">
         <q-td :props="props">
           <q-btn unelevated size="sm" color="secondary" icon="call_split" label="Turnos" @click="openGroups(props.row)" class="q-mr-xs">
@@ -73,6 +79,13 @@
             <q-input v-model.number="form.year_level" label="Ano de escolaridade *" type="number" min="1" />
             <q-input v-model.number="form.num_students" label="Nº de alunos" type="number" min="1" />
             <q-input v-model="form.notes" label="Observações" clearable hint="Ex: info de articulado, condições especiais" />
+            <q-select
+              v-model="form.class_director_id"
+              :options="teacherOptions"
+              label="Diretor de Turma"
+              emit-value map-options clearable
+              hint="Professor responsável pela direção de turma"
+            />
             <div class="row justify-end q-mt-md q-gutter-sm">
               <q-btn flat label="Cancelar" v-close-popup />
               <q-btn type="submit" color="primary" :label="editing ? 'Guardar' : 'Criar'" />
@@ -296,6 +309,7 @@ import { useClassesStore, type SchoolClass, type CurriculumEntry } from 'stores/
 import { useSchoolsStore } from 'stores/schools'
 import { useAcademicYearsStore } from 'stores/academicYears'
 import { useSubjectsStore } from 'stores/subjects'
+import { useTeachersStore } from 'stores/teachers'
 import { api } from 'boot/axios'
 import ImportDialog from 'components/ImportDialog.vue'
 
@@ -304,6 +318,7 @@ const classesStore = useClassesStore()
 const schoolsStore = useSchoolsStore()
 const yearsStore = useAcademicYearsStore()
 const subjectsStore = useSubjectsStore()
+const teachersStore = useTeachersStore()
 
 const search = ref('')
 const showImport = ref(false)
@@ -330,12 +345,13 @@ const columns = [
   { name: 'year_level', label: 'Ano', field: 'year_level', align: 'center' as const },
   { name: 'num_students', label: 'Alunos', field: 'num_students', align: 'center' as const },
   { name: 'notes', label: 'Observações', field: 'notes', align: 'left' as const },
+  { name: 'class_director_name', label: 'Dir. Turma', field: 'class_director_name', align: 'left' as const },
   { name: 'actions', label: 'Ações', field: 'actions', align: 'center' as const },
 ]
 
 const dialog = ref(false)
 const editing = ref<null | SchoolClass>(null)
-const form = ref({ school_id: null as number | null, academic_year_id: null as number | null, name: '', year_level: 5, num_students: 25, notes: '' })
+const form = ref({ school_id: null as number | null, academic_year_id: null as number | null, name: '', year_level: 5, num_students: 25, notes: '', class_director_id: null as number | null })
 
 const groupsDialog = ref(false)
 const selectedClass = ref<SchoolClass | null>(null)
@@ -343,6 +359,7 @@ const curriculumEntries = ref<CurriculumEntry[]>([])
 
 const schoolOptions = computed(() => schoolsStore.schools.map((s) => ({ label: s.name, value: s.id })))
 const yearOptions = computed(() => yearsStore.years.map((y) => ({ label: y.name, value: y.id })))
+const teacherOptions = computed(() => teachersStore.teachers.map((t) => ({ label: t.name, value: t.id })))
 
 function subjectName(id: number) {
   return subjectsStore.subjects.find((s) => s.id === id)?.name ?? '—'
@@ -478,18 +495,19 @@ onMounted(async () => {
     schoolsStore.fetchAll(),
     yearsStore.fetchAll(),
     subjectsStore.fetchAll(),
+    teachersStore.fetchAll(),
   ])
 })
 
 function openCreate() {
   editing.value = null
-  form.value = { school_id: null, academic_year_id: null, name: '', year_level: 5, num_students: 25, notes: '' }
+  form.value = { school_id: null, academic_year_id: null, name: '', year_level: 5, num_students: 25, notes: '', class_director_id: null }
   dialog.value = true
 }
 
 function openEdit(row: SchoolClass) {
   editing.value = row
-  form.value = { school_id: row.school_id, academic_year_id: row.academic_year_id, name: row.name, year_level: row.year_level, num_students: row.num_students, notes: row.notes ?? '' }
+  form.value = { school_id: row.school_id, academic_year_id: row.academic_year_id, name: row.name, year_level: row.year_level, num_students: row.num_students, notes: row.notes ?? '', class_director_id: row.class_director_id ?? null }
   dialog.value = true
 }
 

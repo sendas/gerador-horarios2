@@ -124,6 +124,8 @@ class Class(Base):
     year_level = Column(Integer, nullable=False)
     num_students = Column(Integer, default=25)
     notes = Column(String, nullable=True)  # observações (ex: info do campo articulado)
+    class_director_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
+    class_director = relationship("Teacher", foreign_keys="[Class.class_director_id]")
 
     school = relationship("School", back_populates="classes")
     academic_year = relationship("AcademicYear", back_populates="classes")

@@ -14,6 +14,7 @@ export interface Teacher {
   preferred_shift?: string | null
   max_consecutive_lessons?: number | null
   teaching_component?: number | null
+  base_teaching_hours?: number | null
   subject_names?: string[]
   subject_ids?: number[]
   school_ids?: number[]
