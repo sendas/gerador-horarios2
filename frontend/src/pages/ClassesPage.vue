@@ -250,6 +250,30 @@
               :hint="!newGroupForm.entry1 ? 'Seleciona primeiro a Disciplina A' : ''"
             />
           </div>
+
+          <q-expansion-item
+            v-if="newGroupForm.entry1 && newGroupForm.entry2"
+            icon="tune"
+            label="Ajustar estrutura semanal (opcional)"
+            caption="Podes também alterar isto nos Planos Curriculares"
+            header-class="text-grey-7"
+            dense
+          >
+            <div class="q-gutter-sm q-pt-sm q-pl-sm">
+              <q-select
+                v-model="newGroupForm.structure1"
+                :options="structureOptions"
+                :label="`Estrutura — ${entrySubjectName(newGroupForm.entry1)}`"
+                emit-value map-options dense outlined
+              />
+              <q-select
+                v-model="newGroupForm.structure2"
+                :options="structureOptions"
+                :label="`Estrutura — ${entrySubjectName(newGroupForm.entry2)}`"
+                emit-value map-options dense outlined
+              />
+            </div>
+          </q-expansion-item>
         </q-card-section>
         <q-card-actions align="right" class="q-px-md q-pb-md">
           <q-btn flat label="Cancelar" v-close-popup />
@@ -266,7 +290,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useClassesStore, type SchoolClass, type CurriculumEntry } from 'stores/classes'
 import { useSchoolsStore } from 'stores/schools'
@@ -329,9 +353,58 @@ interface SubjectGroupEntry { id: number; group_id: number; curriculum_entry_id:
 interface SubjectGroupItem { id: number; name: string; academic_year_id: number; entries: SubjectGroupEntry[] }
 const subjectGroups = ref<SubjectGroupItem[]>([])
 
+const structureOptions = [
+  { label: '1 — uma aula por semana', value: '1' },
+  { label: '1+1 — duas aulas separadas', value: '1+1' },
+  { label: '1+1+1 — três aulas separadas', value: '1+1+1' },
+  { label: '1+1+1+1 — quatro aulas separadas', value: '1+1+1+1' },
+  { label: '2 — bloco de 2 aulas', value: '2' },
+  { label: '2+1 — bloco de 2 + 1 aula', value: '2+1' },
+  { label: '2+1+1 — bloco de 2 + 2 aulas separadas', value: '2+1+1' },
+  { label: '2+2 — dois blocos de 2', value: '2+2' },
+  { label: '2+2+1 — dois blocos de 2 + 1 aula', value: '2+2+1' },
+  { label: '3 — bloco de 3 aulas', value: '3' },
+  { label: '3+1 — bloco de 3 + 1 aula', value: '3+1' },
+  { label: '3+2 — bloco de 3 + bloco de 2', value: '3+2' },
+]
+
+function parseStructure(ws: string) {
+  if (!ws || ws.trim() === '1') return { split_count: 1, consecutive_pairs: 0, is_split: false }
+  const parts = ws.trim().split('+').map(Number)
+  const split_count = parts.reduce((a, b) => a + b, 0)
+  const consecutive_pairs = parts.filter(p => p >= 2).length
+  return { split_count, consecutive_pairs, is_split: split_count > 1 }
+}
+
+function entryToStructure(e: CurriculumEntry): string {
+  const { split_count, consecutive_pairs } = e
+  if (split_count <= 1) return '1'
+  if (consecutive_pairs === 0) return Array(split_count).fill('1').join('+')
+  if (split_count === 2 && consecutive_pairs === 1) return '2'
+  if (split_count === 3 && consecutive_pairs === 0) return '1+1+1'
+  if (split_count === 3 && consecutive_pairs === 1) return '2+1'
+  if (split_count === 3 && consecutive_pairs >= 1) return '3'
+  if (split_count === 4 && consecutive_pairs === 0) return '1+1+1+1'
+  if (split_count === 4 && consecutive_pairs === 1) return '2+1+1'
+  if (split_count === 4 && consecutive_pairs === 2) return '2+2'
+  if (split_count === 5 && consecutive_pairs === 2) return '2+2+1'
+  if (split_count === 4 && consecutive_pairs >= 1) return '3+1'
+  if (split_count === 5 && consecutive_pairs >= 1) return '3+2'
+  return Array(split_count).fill('1').join('+')
+}
+
 const newGroupDialog = ref(false)
 const creatingGroup = ref(false)
-const newGroupForm = ref({ name: '', entry1: null as number | null, entry2: null as number | null })
+const newGroupForm = ref({ name: '', entry1: null as number | null, entry2: null as number | null, structure1: '1+1', structure2: '1+1' })
+
+watch(() => newGroupForm.value.entry1, (id) => {
+  const e = id ? curriculumEntries.value.find(e => e.id === id) : null
+  newGroupForm.value.structure1 = e ? entryToStructure(e) : '1+1'
+})
+watch(() => newGroupForm.value.entry2, (id) => {
+  const e = id ? curriculumEntries.value.find(e => e.id === id) : null
+  newGroupForm.value.structure2 = e ? entryToStructure(e) : '1+1'
+})
 
 const entriesNotInAnyGroup = computed(() => {
   const inGroup = new Set(subjectGroups.value.flatMap(g => g.entries.map(e => e.curriculum_entry_id)))
@@ -378,6 +451,15 @@ async function createGroup() {
       api.post<SubjectGroupEntry>(`/subject-groups/${group.id}/entries`, { curriculum_entry_id: newGroupForm.value.entry2 }),
     ])
     group.entries = [r1.data, r2.data]
+    // persist structure if changed from what was in the curriculum entry
+    const e1 = curriculumEntries.value.find(e => e.id === newGroupForm.value.entry1)
+    const e2 = curriculumEntries.value.find(e => e.id === newGroupForm.value.entry2)
+    const updates: Promise<unknown>[] = []
+    if (e1 && entryToStructure(e1) !== newGroupForm.value.structure1)
+      updates.push(classesStore.updateCurriculumEntry(e1.id, parseStructure(newGroupForm.value.structure1)))
+    if (e2 && entryToStructure(e2) !== newGroupForm.value.structure2)
+      updates.push(classesStore.updateCurriculumEntry(e2.id, parseStructure(newGroupForm.value.structure2)))
+    if (updates.length) await Promise.all(updates)
     subjectGroups.value.push(group)
     newGroupDialog.value = false
   } finally {
