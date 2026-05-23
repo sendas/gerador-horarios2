@@ -24,6 +24,38 @@
 
           <q-timeline color="primary" layout="comfortable" class="q-mt-xs">
 
+            <q-timeline-entry icon="call_split" color="secondary">
+              <template #title>
+                <span class="version-title">
+                  <q-badge color="secondary" class="version-badge">v1.24.0</q-badge>
+                  Turnos, Estrutura Semanal e Explicações Contextuais
+                </span>
+              </template>
+              <template #subtitle>
+                <span class="version-date">
+                  <q-icon name="event" size="xs" class="q-mr-xs" />23 de maio de 2026, 18:00
+                </span>
+              </template>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <q-icon name="call_split" size="xs" color="secondary" />
+                  <strong>Diálogo de Turnos redesenhado</strong>: criação num único passo — nome + disciplina A + disciplina B; visualização lado a lado com indicação explícita de "1.ª metade / 2.ª metade / simultâneo"
+                </div>
+                <div class="feature-item">
+                  <q-icon name="tune" size="xs" color="secondary" />
+                  <strong>Estrutura semanal opcional nos Turnos</strong>: após escolher as duas disciplinas aparece secção colapsável para ajustar a estrutura de cada uma sem sair do diálogo; pré-preenchida com o valor atual; só guarda se for alterada
+                </div>
+                <div class="feature-item">
+                  <q-icon name="view_week" size="xs" color="secondary" />
+                  <strong>Mais opções de estrutura semanal</strong>: passaram de 7 para 12 opções — incluem agora 1+1+1+1, 2+1+1, 2+2+1, 3+1, 3+2 (em Disciplinas e Planos Curriculares)
+                </div>
+                <div class="feature-item">
+                  <q-icon name="help_outline" size="xs" color="secondary" />
+                  <strong>Explicações contextuais</strong>: banner em Turnos com exemplo real (CN/FQ em laboratório); banner em Planos Curriculares junto à estrutura semanal e ao par semestral clarificando que nenhum deles divide a turma
+                </div>
+              </div>
+            </q-timeline-entry>
+
             <q-timeline-entry icon="schedule" color="indigo-8">
               <template #title>
                 <span class="version-title">
