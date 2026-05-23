@@ -515,7 +515,7 @@ const assignedHours = computed(() => {
 })
 
 const totalHours = computed(() => selectedTeacher.value?.teaching_component ?? 0)
-const usedHours = computed(() => assignedHours.value + creditHours.value)
+const usedHours = computed(() => assignedHours.value)
 const remainingHours = computed(() => totalHours.value - usedHours.value)
 
 const progressRatio = computed(() =>
