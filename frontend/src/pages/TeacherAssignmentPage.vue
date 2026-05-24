@@ -368,12 +368,12 @@ const teacherAssignedHours = computed(() => {
 })
 
 function teacherHoursInfo(t: Teacher) {
-  const component = t.teaching_component ?? 22
+  // teaching_component is already net (base - art79 - credit); do NOT subtract credit again
+  const component = t.teaching_component ?? t.base_teaching_hours ?? 22
   const credit = t.credit_hours ?? 0
   const assigned = teacherAssignedHours.value[t.id] ?? 0
-  const effective = component - credit
-  const remaining = effective - assigned
-  const ratio = effective > 0 ? assigned / effective : 0
+  const remaining = component - assigned
+  const ratio = component > 0 ? assigned / component : 0
   return { id: t.id, name: t.name, component, credit, assigned, remaining, ratio }
 }
 

@@ -25,6 +25,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'timetables/:id', component: () => import('pages/TimetableDetailPage.vue') },
       { path: 'service-distribution', component: () => import('pages/ServiceAssignmentPage.vue') },
       { path: 'service-distribution-report', component: () => import('pages/ServiceDistributionPage.vue') },
+      { path: 'mapa-servico', component: () => import('pages/MapaServicoPage.vue') },
       { path: 'import-curriculum', component: () => import('pages/ImportCurriculumPage.vue') },
       { path: 'curriculum-plans', component: () => import('pages/CurriculumPlansPage.vue') },
       { path: 'non-teaching', component: () => import('pages/NonTeachingPage.vue') },
