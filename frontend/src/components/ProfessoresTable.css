@@ -62,7 +62,7 @@
 
 .pt-row {
   display: grid;
-  grid-template-columns: 170px 170px 1fr 70px 80px 90px 130px;
+  grid-template-columns: 170px 170px 1fr 70px 80px 90px 150px;
   align-items: center;
   gap: 16px;
   padding: 14px 20px;
@@ -206,6 +206,51 @@
 
 /* ----- responsive: collapse metric columns on smaller screens ----- */
 @media (max-width: 1100px) {
-  .pt-row { grid-template-columns: 1fr 1fr 60px 60px 130px; }
+  .pt-row { grid-template-columns: 1fr 1fr 60px 60px 150px; }
   .pt-col-base, .pt-col-free { display: none; }
+}
+
+/* ----- mobile card layout (portrait phones) ----- */
+@media (max-width: 600px) {
+  .pt-head { display: none; }
+
+  .pt-row:not(.pt-head) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto;
+    row-gap: 5px;
+    column-gap: 10px;
+    padding: 10px 14px;
+    align-items: start;
+  }
+
+  .pt-name-cell    { grid-column: 1; grid-row: 1; }
+  .pt-col-base     { display: none !important; }
+  .pt-col-subjects { grid-column: 1; grid-row: 2; }
+  .pt-col-cl       { grid-column: 1; grid-row: 3; font-size: 12px; text-align: left; justify-self: start; }
+  .pt-col-max      { display: none !important; }
+  .pt-col-free     { display: none !important; }
+
+  .pt-actions {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .pt-btn-edit,
+  .pt-btn-more { justify-content: center; }
+
+  .pt-col-cl::before {
+    content: "CL líq.: ";
+    color: var(--pt-muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .pt-detail-wrap { padding: 10px 14px; }
 }

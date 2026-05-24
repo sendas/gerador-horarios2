@@ -47,7 +47,7 @@
         </div>
 
         <!-- Disciplinas (pills) -->
-        <div>
+        <div class="pt-col-subjects">
           <div class="pt-subjects">
             <span v-for="(s, si) in (row.subjects ?? [])" :key="si" class="pt-pill">{{ s }}</span>
             <span v-if="!row.subjects?.length" class="pt-muted">—</span>
@@ -55,8 +55,8 @@
         </div>
 
         <!-- Métricas -->
-        <div class="pt-num">{{ row.cl ?? '—' }}</div>
-        <div class="pt-num">{{ row.max ?? '—' }}</div>
+        <div class="pt-num pt-col-cl">{{ row.cl ?? '—' }}</div>
+        <div class="pt-num pt-col-max">{{ row.max ?? '—' }}</div>
         <div class="pt-col-free">{{ row.free || '—' }}</div>
 
         <!-- Ações -->
