@@ -142,9 +142,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-
+<script lang="ts">
 export interface PtRow {
   id?: string | number
   name: string
@@ -155,6 +153,11 @@ export interface PtRow {
   max?: number | string | null
   free?: string | null
 }
+</script>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { PtRow } from './ProfessoresTable.vue'
 
 withDefaults(defineProps<{
   rows?: PtRow[]
