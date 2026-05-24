@@ -114,6 +114,70 @@
       </div>
     </section>
 
+    <!-- Guias Práticos -->
+    <section class="dash-section dash-section--guides">
+      <div class="dash-section__head">
+        <span class="dash-section__eyebrow">Documentação</span>
+        <h2 class="dash-section__title">Guias práticos</h2>
+        <p class="dash-section__desc">
+          Passo a passo para as configurações mais comuns.
+        </p>
+      </div>
+
+      <div class="row q-col-gutter-md">
+        <div
+          v-for="(guide, gi) in guides"
+          :key="guide.id"
+          class="col-12 col-md-6"
+        >
+          <q-card
+            flat bordered
+            class="guide-card"
+            :style="{ animationDelay: `${gi * 80}ms` }"
+          >
+            <q-expansion-item
+              v-model="guide.open"
+              :header-class="guide.open ? 'guide-card__header--open' : ''"
+            >
+              <template #header>
+                <div class="guide-card__header-inner">
+                  <div class="guide-card__icon-wrap" :style="{ background: guide.iconBg }">
+                    <q-icon :name="guide.icon" size="20px" :style="{ color: guide.iconColor }" />
+                  </div>
+                  <div class="guide-card__meta">
+                    <div class="guide-card__title">{{ guide.title }}</div>
+                    <div class="guide-card__hint">{{ guide.hint }}</div>
+                  </div>
+                </div>
+              </template>
+
+              <q-separator />
+              <q-card-section class="guide-card__body">
+                <ol class="guide-steps">
+                  <li
+                    v-for="(step, si) in guide.steps"
+                    :key="si"
+                    class="guide-step"
+                  >
+                    <div class="guide-step__title">{{ step.title }}</div>
+                    <div class="guide-step__desc" v-html="step.desc"></div>
+                    <q-banner
+                      v-if="step.note"
+                      dense rounded
+                      class="guide-step__note q-mt-xs"
+                    >
+                      <template #avatar><q-icon name="info" color="info" /></template>
+                      <span v-html="step.note"></span>
+                    </q-banner>
+                  </li>
+                </ol>
+              </q-card-section>
+            </q-expansion-item>
+          </q-card>
+        </div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="dash-footer">
       © {{ new Date().getFullYear() }} Sinaptik2 —
@@ -156,6 +220,59 @@ const quickLinks = computed(() => [
   { to: '/scheduling-rules', icon: 'rule',         label: 'Regras',         hint: 'Restrições e prefs', color: '#dc2626', bg: 'rgba(239,68,68,.10)' },
   { to: '/curriculum-plans', icon: 'menu_book',    label: 'Currículo',      hint: 'Planos curriculares', color: '#7c3aed', bg: 'rgba(124,58,237,.10)' },
   { to: '/teacher-assignment', icon: 'assignment_ind', label: 'Atribuições', hint: 'Professor → turma', color: '#0d9488', bg: 'rgba(20,184,166,.10)' },
+])
+
+// ── Guides ────────────────────────────────────────────────────────────────────
+
+type GuideStep = { title: string; desc: string; note?: string }
+type Guide = { id: string; title: string; hint: string; icon: string; iconBg: string; iconColor: string; open: boolean; steps: GuideStep[] }
+
+const guides = ref<Guide[]>([
+  {
+    id: 'semestral-oc',
+    title: 'Disciplinas semestrais e Oferta Complementar (OC)',
+    hint: 'Como configurar pares TIC + OC, Cidadania + OC e outros',
+    icon: 'schema',
+    iconBg: 'rgba(99,102,241,0.10)',
+    iconColor: '#6366f1',
+    open: false,
+    steps: [
+      {
+        title: '1. Criar as disciplinas',
+        desc: 'Aceda a <strong>Disciplinas</strong> e certifique-se de que existem entradas para:<br>'
+          + '&bull; <strong>TIC</strong> — regime <em>Anual</em>, estrutura semanal "1+1" (2 tempos por semana)<br>'
+          + '&bull; <strong>OC</strong> (Oferta Complementar) — regime <em>Semestral</em>, estrutura "1" (1 tempo por semana)<br>'
+          + '&bull; <strong>Cidadania (CD)</strong> — regime <em>Semestral</em>, estrutura "1+1" normalmente<br>'
+          + 'Ative a opção <em>"Articulado (OC)"</em> em TIC e CD para as marcar como suscetíveis de receberem OC.',
+        note: 'A OC não tem professores próprios: é lecionada pelo professor de TIC ou CD e aparece no horário desse professor.',
+      },
+      {
+        title: '2. Configurar o plano curricular',
+        desc: 'Em <strong>Planos Curriculares</strong>, edite a entrada de TIC para o ano de escolaridade pretendido:<br>'
+          + '&bull; Ative <em>Semestral</em> e defina <em>Disciplina par</em> = OC.<br>'
+          + '&bull; Em <em>Etiqueta do professor</em> escreva, por ex., <code>TIC</code> (o que aparece no horário do professor).<br>'
+          + '&bull; Em <em>Etiqueta do aluno</em> escreva <code>TIC</code> ou <code>TIC / OC</code> conforme preferir.<br>'
+          + 'Repita para a disciplina de Cidadania (par = OC), se aplicável.',
+      },
+      {
+        title: '3. Aplicar o plano às turmas',
+        desc: 'Ainda em Planos Curriculares, clique <strong>Aplicar às turmas</strong>. O sistema cria entradas de currículo para cada turma, '
+          + 'incluindo a relação semestral entre TIC e OC.',
+        note: 'Ao aplicar, entradas existentes para o mesmo ano letivo não são sobrepostas por omissão (pode alterar esse comportamento na janela de aplicação).',
+      },
+      {
+        title: '4. Atribuir professores',
+        desc: 'Em <strong>Definição de horas por docente → Atribuição de Professores</strong>, atribua o professor de TIC à entrada de TIC de cada turma. '
+          + 'A OC "vai a reboque" da TIC e não precisa de atribuição separada.',
+      },
+      {
+        title: '5. Resultado no horário',
+        desc: 'Ao visualizar o horário do <strong>professor</strong>, o bloco semestral aparece com TIC em cima e OC em baixo (S1/S2). '
+          + 'No horário do <strong>aluno</strong>, aparece o nome configurado na etiqueta do aluno. '
+          + 'No <strong>Mapa de Serviço Docente</strong>, cada turma/OC surge numa linha separada com o turno e a marcação semestral.',
+      },
+    ],
+  },
 ])
 
 // Animated counter — increments from 0 to target over ~500ms
@@ -441,4 +558,80 @@ onMounted(async () => {
   .dash-section { padding: 32px 20px 6px; }
   .stat-card__value { font-size: 1.7rem; }
 }
+
+/* ── GUIDES SECTION ───────────────────────────────────────────────── */
+.dash-section__desc {
+  font-size: 0.87rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+.guide-card {
+  border-radius: 14px !important;
+  background: #fff;
+  animation: fade-up 0.6s ease-out both;
+  overflow: hidden;
+}
+.guide-card__header-inner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 4px 0;
+  flex: 1;
+}
+.guide-card__icon-wrap {
+  flex: 0 0 auto;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.guide-card__meta { flex: 1 1 auto; min-width: 0; }
+.guide-card__title {
+  font-weight: 700;
+  font-size: 0.94rem;
+  color: #0f172a;
+  line-height: 1.25;
+}
+.guide-card__hint {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+.guide-card__body { padding: 16px 20px 20px !important; }
+.guide-steps {
+  padding-left: 0;
+  list-style: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.guide-step {
+  border-left: 3px solid #e2e8f0;
+  padding-left: 14px;
+}
+.guide-step__title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+.guide-step__desc {
+  font-size: 0.83rem;
+  color: #475569;
+  line-height: 1.7;
+}
+.guide-step__note {
+  font-size: 0.78rem;
+  background: rgba(14,165,233,0.06) !important;
+  border-radius: 8px !important;
+}
+
+/* dark mode */
+.body--dark .guide-card {
+  background: #0f172a !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.body--dark .guide-card__title { color: #e2e8f0; }
+.body--dark .guide-step__title { color: #cbd5e1; }
+.body--dark .guide-step__desc { color: #94a3b8; }
+.body--dark .guide-step { border-left-color: rgba(255,255,255,0.12); }
+.body--dark .dash-section__desc { color: #94a3b8; }
 </style>

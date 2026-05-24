@@ -6,7 +6,7 @@
       <q-input v-model="search" placeholder="Pesquisar..." dense outlined clearable style="min-width:200px">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
-      <ExportButton class="q-ml-sm" @export="doExport" />
+      <ExportButton class="q-ml-sm" :sort-options="classSortOptions" @export="doExport" />
       <q-btn color="primary" icon="add" label="Nova" @click="openCreate" class="q-ml-sm" />
       <q-btn color="secondary" icon="upload" label="Importar Turmas" @click="showImport = true" class="q-ml-sm" />
     </div>
@@ -313,7 +313,7 @@ import { useSubjectsStore } from 'stores/subjects'
 import { useTeachersStore } from 'stores/teachers'
 import { api } from 'boot/axios'
 import ImportDialog from 'components/ImportDialog.vue'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
@@ -322,7 +322,7 @@ const schoolsStore = useSchoolsStore()
 const yearsStore = useAcademicYearsStore()
 const subjectsStore = useSubjectsStore()
 const teachersStore = useTeachersStore()
-const { exportToPDF, exportToHTML, exportToCSV } = useExport()
+const { exportToPDF, exportToHTML, exportToCSV, sortRows } = useExport()
 
 const search = ref('')
 const showImport = ref(false)
@@ -345,8 +345,14 @@ const exportColumns: ExportColumn[] = [
   { label: 'Notas', field: (r) => (r.notes as string) ?? '' },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const rows = filteredClasses.value as unknown as Record<string, unknown>[]
+const classSortOptions: SortOption[] = [
+  { label: 'Nome', field: 'name' },
+  { label: 'Ano Esc.', field: (r) => String(r.year_level ?? '') },
+  { label: 'Escola', field: (r) => schoolsStore.schools.find((s) => s.id === r.school_id)?.name ?? '' },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const rows = sortRows(filteredClasses.value as unknown as Record<string, unknown>[], sortBy, sortDir)
   const title = 'Turmas'
   if (format === 'pdf') exportToPDF(title, rows, exportColumns)
   else if (format === 'html') exportToHTML(title, rows, exportColumns, 'turmas')

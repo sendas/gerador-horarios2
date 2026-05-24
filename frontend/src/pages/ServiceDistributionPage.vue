@@ -31,7 +31,7 @@
         />
       </div>
       <div class="col-12 col-sm-4 row items-center q-gutter-sm">
-        <ExportButton :disable="teachers.length === 0" @export="doExport" />
+        <ExportButton :disable="teachers.length === 0" :sort-options="distSortOptions" @export="doExport" />
         <q-btn color="secondary" icon="upload" label="Importar Comp. Letiva" dense :disable="!selectedYearId" @click="showImport = true" />
       </div>
     </div>
@@ -422,12 +422,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAcademicYearsStore } from 'stores/academicYears'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const yearsStore = useAcademicYearsStore()
-const { exportToPDF, exportToHTML } = useExport()
+const { exportToPDF, exportToHTML, sortRows } = useExport()
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -658,17 +658,112 @@ const distExportColumns: ExportColumn[] = [
   },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const rows = filteredTeachers.value as unknown as Record<string, unknown>[]
+const distSortOptions: SortOption[] = [
+  { label: 'Professor', field: 'name' },
+  { label: 'Escola', field: (r) => String(r.primary_school_name ?? '') },
+  { label: 'Horas Marcadas', field: (r) => String(r.scheduled_hours ?? 0) },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const sorted = sortRows(filteredTeachers.value as unknown as Record<string, unknown>[], sortBy, sortDir)
   const title = 'Distribuição de Serviço'
-  if (format === 'pdf') exportToPDF(title, rows, distExportColumns)
-  else if (format === 'html') exportToHTML(title, rows, distExportColumns, 'distribuicao-servico')
-  else exportCsv()
+  if (format === 'pdf') exportToPDF(title, sorted, distExportColumns)
+  else if (format === 'html') exportToHTML(title, sorted, distExportColumns, 'distribuicao-servico')
+  else exportCsv(sorted as unknown as TeacherDistribution[])
 }
 
-function exportCsv() {
+async function printMapaServico(teacher: TeacherDistribution) {
+  if (!selectedYearId.value) return
+  try {
+    const params: Record<string, unknown> = { academic_year_id: selectedYearId.value }
+    if (selectedTimetableId.value) params.timetable_id = selectedTimetableId.value
+    const { data } = await api.get(`/service-distribution/mapa-servico/${teacher.id}`, { params })
+    const html = generateMapaServicoHtml(data)
+    const win = window.open('', '_blank')
+    if (win) {
+      win.document.write(html)
+      win.document.close()
+      win.onload = () => win.print()
+    }
+  } catch {
+    $q.notify({ type: 'negative', message: 'Erro ao gerar mapa de serviço' })
+  }
+}
+
+function generateMapaServicoHtml(data: {
+  teacher: { name: string; school_name?: string; cluster_name?: string }
+  academic_year_name: string
+  non_teaching_rows: { tl: number; discipline: string; text: string; type: string }[]
+  teaching_rows: { tl: number; class_name: string; discipline: string; turno: string; semestral: boolean; room: string; text: string; description: string }[]
+  total_tl: number
+}): string {
+  const { teacher, academic_year_name, non_teaching_rows, teaching_rows, total_tl } = data
+  const ntRows = non_teaching_rows.map(r => `
+    <tr>
+      <td class="num">${r.tl}</td>
+      <td></td>
+      <td>${r.discipline}</td>
+      <td></td><td></td><td></td><td></td>
+      <td>${r.text}</td>
+      <td>${r.type}</td>
+    </tr>`).join('')
+  const tRows = teaching_rows.map(r => `
+    <tr>
+      <td class="num">${r.tl}</td>
+      <td>${r.class_name}</td>
+      <td>${r.discipline}</td>
+      <td>${r.turno}</td>
+      <td>${r.semestral ? 'Sem' : ''}</td>
+      <td>${r.room}</td>
+      <td></td>
+      <td>${r.text}</td>
+      <td>${r.description}</td>
+    </tr>`).join('')
+  return `<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8">
+<title>Mapa de Serviço — ${teacher.name}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:11px;margin:20px}
+  h3{margin:2px 0;font-size:13px}
+  .header{display:flex;justify-content:space-between;margin-bottom:12px}
+  .header-left p{margin:2px 0}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid #999;padding:3px 6px}
+  th{background:#2c3e50;color:#fff;font-size:10px}
+  td.num{text-align:center;width:32px}
+  tr:nth-child(even){background:#f9f9f9}
+  .total{font-weight:bold;border-top:2px solid #333}
+  @media print{body{margin:10mm}}
+</style></head><body>
+<div class="header">
+  <div class="header-left">
+    <h3>${teacher.cluster_name || teacher.school_name || ''}</h3>
+    <p>${teacher.school_name || ''}</p>
+    <p>Horários ${academic_year_name}</p>
+  </div>
+  <div><strong>${teacher.name}</strong></div>
+</div>
+<table>
+<thead><tr>
+  <th>TL</th><th>Turma/s</th><th>Disciplina</th>
+  <th>Turnos</th><th>Semestral</th><th>Sala</th><th>Sala 2</th>
+  <th>Texto</th><th>Descrição</th>
+</tr></thead>
+<tbody>
+${ntRows}
+${tRows}
+<tr class="total">
+  <td class="num">${total_tl}.</td>
+  <td colspan="8"></td>
+</tr>
+</tbody>
+</table>
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`
+}
+
+function exportCsv(data?: TeacherDistribution[]) {
   const header = ['Professor', 'Comp. Letiva', 'Horas Marcadas', 'Serv. Não Letivo', 'Total Serviço', 'Turmas']
-  const rows = teachers.value.map((t) => [
+  const rows = (data ?? filteredTeachers.value).map((t) => [
     t.name,
     t.teaching_component ?? '',
     t.scheduled_hours,

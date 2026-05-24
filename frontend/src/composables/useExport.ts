@@ -149,5 +149,19 @@ ${table}`
     downloadBlob(buildHtmlDocument(title, body, extraStyles), `${filename}.html`, 'text/html;charset=utf-8')
   }
 
-  return { exportToPDF, exportToHTML, exportToCSV, printHTML, downloadHTML, rowsToTableHtml, buildHtmlDocument }
+  function sortRows(
+    rows: Record<string, unknown>[],
+    sortBy: { field: string | ((row: Record<string, unknown>) => string) } | null,
+    sortDir: 'asc' | 'desc' = 'asc',
+  ): Record<string, unknown>[] {
+    if (!sortBy) return rows
+    return [...rows].sort((a, b) => {
+      const av = String(typeof sortBy.field === 'function' ? sortBy.field(a) : (a[sortBy.field as string] ?? ''))
+      const bv = String(typeof sortBy.field === 'function' ? sortBy.field(b) : (b[sortBy.field as string] ?? ''))
+      const cmp = av.localeCompare(bv, 'pt', { sensitivity: 'base' })
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }
+
+  return { exportToPDF, exportToHTML, exportToCSV, printHTML, downloadHTML, rowsToTableHtml, buildHtmlDocument, sortRows }
 }

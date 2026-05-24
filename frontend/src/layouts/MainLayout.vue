@@ -146,6 +146,11 @@
           <q-item-section>Relatório de Serviço</q-item-section>
         </q-item>
 
+        <q-item clickable v-ripple :to="'/mapa-servico'">
+          <q-item-section avatar><q-icon name="assignment" color="indigo-6" /></q-item-section>
+          <q-item-section>Mapa de Serviço Docente</q-item-section>
+        </q-item>
+
         <template v-if="auth.isAdmin">
           <q-separator />
           <q-item-label header caption>Administração</q-item-label>

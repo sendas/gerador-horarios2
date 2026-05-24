@@ -2,7 +2,7 @@
   <q-page padding>
     <div class="row items-center q-mb-md">
       <div class="text-h5 col">Distribuição de Serviço</div>
-      <ExportButton class="q-mr-sm" :disable="allEntries.length === 0" title="Exportar atribuições" @export="doExport" />
+      <ExportButton class="q-mr-sm" :disable="allEntries.length === 0" title="Exportar atribuições" :sort-options="assignSortOptions" @export="doExport" />
       <q-btn color="indigo-7" icon="calculate" label="Componentes" class="q-mr-sm" :disable="!selectedYearId" @click="openComponentDialog" />
       <q-select
         v-model="selectedYearId"
@@ -444,7 +444,7 @@ import { useClustersStore } from 'stores/clusters'
 import { useAcademicYearsStore } from 'stores/academicYears'
 import { useTeachersStore } from 'stores/teachers'
 import { useClassesStore } from 'stores/classes'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
@@ -452,7 +452,7 @@ const clustersStore = useClustersStore()
 const yearsStore = useAcademicYearsStore()
 const teachersStore = useTeachersStore()
 const classesStore = useClassesStore()
-const { exportToPDF, exportToHTML, exportToCSV } = useExport()
+const { exportToPDF, exportToHTML, exportToCSV, sortRows } = useExport()
 
 type Entry = {
   id: number
@@ -583,9 +583,16 @@ const assignExportColumns: ExportColumn[] = [
   { label: 'H/sem', field: 'hours_per_week', align: 'center' },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const assigned = allEntries.value.filter((e) => e.teacher_id !== null)
-  const rows = assigned as unknown as Record<string, unknown>[]
+const assignSortOptions: SortOption[] = [
+  { label: 'Professor', field: (r) => teachersStore.teachers.find((t) => t.id === r.teacher_id)?.name ?? '' },
+  { label: 'Turma', field: 'class_name' },
+  { label: 'Disciplina', field: 'subject_name' },
+  { label: 'Escola', field: 'school_name' },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const assigned = allEntries.value.filter((e) => e.teacher_id !== null) as unknown as Record<string, unknown>[]
+  const rows = sortRows(assigned, sortBy, sortDir)
   const title = 'Distribuição de Serviço — Atribuições'
   if (format === 'pdf') exportToPDF(title, rows, assignExportColumns)
   else if (format === 'html') exportToHTML(title, rows, assignExportColumns, 'atribuicoes')

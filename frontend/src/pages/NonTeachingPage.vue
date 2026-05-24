@@ -2,7 +2,7 @@
   <q-page padding>
     <div class="row items-center q-mb-md">
       <div class="text-h5 col">Serviço Não Letivo</div>
-      <ExportButton @export="doExport" />
+      <ExportButton :sort-options="ntSortOptions" @export="doExport" />
     </div>
 
     <div class="row q-col-gutter-md">
@@ -120,14 +120,14 @@ import { api } from 'boot/axios'
 import { useClustersStore } from 'stores/clusters'
 import { useTeachersStore } from 'stores/teachers'
 import { useAcademicYearsStore } from 'stores/academicYears'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const clustersStore = useClustersStore()
 const teachersStore = useTeachersStore()
 const yearsStore = useAcademicYearsStore()
-const { exportToPDF, exportToHTML, exportToCSV } = useExport()
+const { exportToPDF, exportToHTML, exportToCSV, sortRows } = useExport()
 
 const DAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
 const dayOptions = DAYS.map((d, i) => ({ label: d, value: i }))
@@ -160,8 +160,14 @@ const exportColumns: ExportColumn[] = [
   { label: 'Tempo', field: 'slot_number', align: 'center' },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const rows = assignments.value as unknown as Record<string, unknown>[]
+const ntSortOptions: SortOption[] = [
+  { label: 'Professor', field: (r) => teachersStore.teachers.find((t) => t.id === r.teacher_id)?.name ?? '' },
+  { label: 'Tipo', field: (r) => typeName(r.non_teaching_type_id as number) },
+  { label: 'Dia', field: (r) => DAYS[r.day_of_week as number] ?? '' },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const rows = sortRows(assignments.value as unknown as Record<string, unknown>[], sortBy, sortDir)
   const title = 'Serviço Não Letivo'
   if (format === 'pdf') exportToPDF(title, rows, exportColumns)
   else if (format === 'html') exportToHTML(title, rows, exportColumns, 'servico-nao-letivo')
