@@ -6,7 +6,7 @@
       <q-input v-model="search" placeholder="Pesquisar..." dense outlined clearable style="min-width:200px">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
-      <ExportButton class="q-ml-sm" @export="doExport" />
+      <ExportButton class="q-ml-sm" :sort-options="teacherSortOptions" @export="doExport" />
       <q-btn color="orange-7" icon="event_busy" label="Blocos indisponíveis" @click="openBulkAvail" class="q-ml-sm">
         <q-tooltip>Definir blocos indisponíveis para todos os professores do agrupamento</q-tooltip>
       </q-btn>
@@ -40,81 +40,54 @@
       <q-badge v-if="selectedSchoolIds.size > 0" color="teal-7" :label="`${filteredTeachers.length} professor(es)`" class="q-ml-xs" />
     </div>
 
-    <q-table :rows="filteredTeachers" :columns="columns" row-key="id" :loading="teachersStore.loading" :filter="search" sort-by="name">
-      <template #body="props">
-        <q-tr :props="props">
-          <q-td key="name" :props="props" class="cursor-pointer" style="white-space:nowrap" @click="toggleTeacherExpand(props.row)">
-            <q-icon :name="expandedTeacherId === props.row.id ? 'expand_less' : 'expand_more'" size="xs" color="grey-6" class="q-mr-xs" />
-            {{ props.row.name }}
-          </q-td>
-          <q-td key="primary_school" :props="props">
-            <span v-if="props.row.primary_school_name">
-              <q-icon name="star" color="amber-7" size="xs" class="q-mr-xs" />{{ props.row.primary_school_name }}
-            </span>
-            <span v-else-if="props.row.school_ids?.length" class="text-caption text-grey-6">
-              {{ props.row.school_ids.length }} escola(s) — sem base
-            </span>
-            <span v-else class="text-caption text-orange-7">
-              <q-icon name="warning" size="xs" /> sem escola
-            </span>
-          </q-td>
-          <q-td key="subject_names" :props="props">
-            <q-chip v-for="s in props.row.subject_names" :key="s" size="sm" :label="s" color="blue-2" text-color="dark" class="q-mr-xs" />
-            <span v-if="!props.row.subject_names?.length" class="text-grey-5">—</span>
-          </q-td>
-          <q-td key="teaching_component" :props="props" class="text-center">{{ props.row.teaching_component ?? '—' }}<q-tooltip>Componente Letiva líquida = CL base − Art.79° − Crédito H. (calculada em Distribuição de Serviço)</q-tooltip></q-td>
-          <q-td key="max_daily_lessons" :props="props" class="text-center">{{ props.row.max_daily_lessons ?? '—' }}</q-td>
-          <q-td key="preferred_free_day" :props="props" class="text-center">
-            {{ props.row.preferred_free_day !== null && props.row.preferred_free_day !== undefined ? DAYS[props.row.preferred_free_day] : '—' }}
-          </q-td>
-          <q-td key="actions" :props="props">
-            <q-btn unelevated size="sm" color="info" icon="school" label="Escolas" @click="openSchools(props.row)" class="q-mr-xs" />
-            <q-btn unelevated size="sm" color="secondary" icon="book" label="Disciplinas" @click="openSubjects(props.row)" class="q-mr-xs" />
-            <q-btn unelevated size="sm" color="teal" icon="groups" label="Turmas" @click="openCurriculum(props.row)" class="q-mr-xs" />
-            <q-btn unelevated size="sm" color="positive" icon="event_available" label="Disponibilidade" @click="openAvailability(props.row)" class="q-mr-xs" />
-            <q-btn unelevated size="sm" color="grey-6" icon="edit" label="Editar" @click="openEdit(props.row)" class="q-mr-xs" />
-            <q-btn unelevated size="sm" color="negative" icon="delete" label="Apagar" @click="confirmDelete(props.row)" />
-          </q-td>
-        </q-tr>
-        <q-tr v-show="expandedTeacherId === props.row.id" :props="props">
-          <q-td :colspan="columns.length" class="q-pa-sm bg-blue-grey-1">
-            <div v-if="expandLoading" class="text-grey-6 text-caption q-pa-xs">A carregar...</div>
-            <div v-else class="row q-gutter-md items-start q-pl-sm">
-              <div>
-                <div class="text-caption text-grey-7 q-mb-xs">Escolas</div>
-                <template v-if="props.row.school_ids?.length">
-                  <q-chip
-                    v-for="sid in props.row.school_ids"
-                    :key="sid"
-                    dense
-                    :icon="sid === props.row.primary_school_id ? 'star' : 'school'"
-                    :color="sid === props.row.primary_school_id ? 'amber-7' : 'blue-grey-3'"
-                    :text-color="sid === props.row.primary_school_id ? 'white' : 'dark'"
-                    :label="schoolName(sid)"
-                  />
-                </template>
-                <span v-else class="text-caption text-grey-5">sem escola</span>
-              </div>
-              <q-separator vertical />
-              <div>
-                <div class="text-caption text-grey-7 q-mb-xs">Turmas atribuídas</div>
-                <template v-if="expandedTeacherId === props.row.id && expandedClasses.length">
-                  <q-chip
-                    v-for="cls in expandedClasses"
-                    :key="cls.class_id"
-                    dense
-                    color="teal-2"
-                    text-color="dark"
-                    :label="`${cls.class_name} (${cls.year_level}º)`"
-                  />
-                </template>
-                <span v-else-if="expandedTeacherId === props.row.id" class="text-caption text-grey-5">sem turmas atribuídas</span>
-              </div>
-            </div>
-          </q-td>
-        </q-tr>
+    <ProfessoresTable
+      :rows="tableRows"
+      :theme="$q.dark.isActive ? 'dark' : 'light'"
+      :loading="teachersStore.loading"
+      @editar="handleEditar"
+      @escolas="handleEscolas"
+      @disciplinas="handleDisciplinas"
+      @turmas="handleTurmas"
+      @disponibilidade="handleDisponibilidade"
+      @apagar="handleApagar"
+      @expand="handleExpand"
+    >
+      <template #detail="{ row }">
+        <div v-if="expandLoading" class="text-grey-6 text-caption">A carregar...</div>
+        <div v-else class="row q-gutter-md items-start">
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">Escolas</div>
+            <template v-if="rawTeacher(row)?.school_ids?.length">
+              <q-chip
+                v-for="sid in rawTeacher(row)!.school_ids"
+                :key="sid"
+                dense
+                :icon="sid === rawTeacher(row)!.primary_school_id ? 'star' : 'school'"
+                :color="sid === rawTeacher(row)!.primary_school_id ? 'amber-7' : 'blue-grey-3'"
+                :text-color="sid === rawTeacher(row)!.primary_school_id ? 'white' : 'dark'"
+                :label="schoolName(sid)"
+              />
+            </template>
+            <span v-else class="text-caption text-grey-5">sem escola</span>
+          </div>
+          <q-separator vertical />
+          <div>
+            <div class="text-caption text-grey-7 q-mb-xs">Turmas atribuídas</div>
+            <template v-if="expandedClasses.length">
+              <q-chip
+                v-for="cls in expandedClasses"
+                :key="cls.class_id"
+                dense
+                color="teal-2"
+                text-color="dark"
+                :label="`${cls.class_name} (${cls.year_level}º)`"
+              />
+            </template>
+            <span v-else class="text-caption text-grey-5">sem turmas atribuídas</span>
+          </div>
+        </div>
       </template>
-    </q-table>
+    </ProfessoresTable>
 
     <!-- Bulk availability grid dialog -->
     <q-dialog v-model="bulkAvailDialog" persistent full-width>
@@ -560,14 +533,16 @@ import { useSubjectsStore } from 'stores/subjects'
 import { useClassesStore, type SchoolClass } from 'stores/classes'
 import { api } from 'boot/axios'
 import ImportDialog from 'components/ImportDialog.vue'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
+import ProfessoresTable, { type PtRow } from 'components/ProfessoresTable.vue'
+import 'components/ProfessoresTable.css'
 
 const $q = useQuasar()
 const teachersStore = useTeachersStore()
 const clustersStore = useClustersStore()
 const classesStore = useClassesStore()
-const { exportToPDF, exportToHTML, exportToCSV } = useExport()
+const { exportToPDF, exportToHTML, exportToCSV, sortRows } = useExport()
 
 const search = ref('')
 const showImport = ref(false)
@@ -594,8 +569,13 @@ const exportColumns: ExportColumn[] = [
   { label: 'Dia livre pref.', field: (r) => r.preferred_free_day !== null && r.preferred_free_day !== undefined ? DAYS[r.preferred_free_day as number] : '—', align: 'center' },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const rows = filteredTeachers.value as unknown as Record<string, unknown>[]
+const teacherSortOptions: SortOption[] = [
+  { label: 'Nome', field: 'name' },
+  { label: 'Escola Base', field: (r) => String(r.primary_school_name ?? '') },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const rows = sortRows(filteredTeachers.value as unknown as Record<string, unknown>[], sortBy, sortDir)
   const title = 'Professores'
   if (format === 'pdf') exportToPDF(title, rows, exportColumns)
   else if (format === 'html') exportToHTML(title, rows, exportColumns, 'professores')
@@ -682,6 +662,46 @@ const filteredTeachers = computed(() => {
   )
 })
 
+// ── ProfessoresTable data + handlers ─────────────────────────────────────────
+
+const searchedTeachers = computed(() => {
+  const q = search.value?.toLowerCase().trim()
+  if (!q) return filteredTeachers.value
+  return filteredTeachers.value.filter((t) =>
+    t.name.toLowerCase().includes(q) ||
+    (t.primary_school_name ?? '').toLowerCase().includes(q) ||
+    (t.subject_names ?? []).some((s) => s.toLowerCase().includes(q))
+  )
+})
+
+const tableRows = computed<PtRow[]>(() =>
+  searchedTeachers.value.map((t) => ({
+    id: t.id,
+    name: t.name,
+    base: t.primary_school_name
+      ? t.primary_school_name
+      : (t.school_ids?.length ? `${t.school_ids.length} escola(s) — sem base` : ''),
+    baseWarn: !t.primary_school_name && !t.school_ids?.length,
+    subjects: t.subject_names ?? [],
+    cl: t.teaching_component ?? '—',
+    max: t.max_daily_lessons ?? '—',
+    free: t.preferred_free_day !== null && t.preferred_free_day !== undefined
+      ? DAYS[t.preferred_free_day] : '—',
+  }))
+)
+
+function rawTeacher(row: PtRow) {
+  return teachersStore.teachers.find((t) => t.id === row.id) ?? null
+}
+
+function handleEditar(row: PtRow)          { const t = rawTeacher(row); if (t) openEdit(t) }
+function handleEscolas(row: PtRow)         { const t = rawTeacher(row); if (t) openSchools(t) }
+function handleDisciplinas(row: PtRow)     { const t = rawTeacher(row); if (t) openSubjects(t) }
+function handleTurmas(row: PtRow)          { const t = rawTeacher(row); if (t) openCurriculum(t) }
+function handleDisponibilidade(row: PtRow) { const t = rawTeacher(row); if (t) openAvailability(t) }
+function handleApagar(row: PtRow)          { const t = rawTeacher(row); if (t) confirmDelete(t) }
+function handleExpand(row: PtRow | null)   { const t = row ? rawTeacher(row) : null; if (t) void toggleTeacherExpand(t) }
+
 const clusterOptions = computed(() => clustersStore.clusters.map((c) => ({ label: c.name, value: c.id })))
 const schoolOptions = computed(() => schoolsStore.schools.map((s) => ({ label: s.name, value: s.id })))
 const yearOptions = computed(() => yearsStore.years.map((y) => ({ label: y.name, value: y.id })))
@@ -726,12 +746,10 @@ const curriculumYear = ref<number | null>(null)
 const curriculumSubjectId = ref<number | null>(null)
 const defaultHours = ref(2)
 const curriculumClassSearch = ref('')
-// All curriculum entries for the cluster+year (to detect existing entries per class+subject)
 const allClusterEntries = ref<CurriculumEntry[]>([])
 
 const clusterId = computed(() => clustersStore.clusters[0]?.id ?? null)
 
-// All classes in the cluster for the curriculum year
 const curriculumAllClasses = computed<SchoolClass[]>(() => {
   const schoolIds = new Set(schoolsStore.schools.filter((s) => s.cluster_id === clusterId.value).map((s) => s.id))
   return classesStore.classes.filter(
@@ -739,7 +757,6 @@ const curriculumAllClasses = computed<SchoolClass[]>(() => {
   )
 })
 
-// Map class_id → CurriculumEntry for the selected subject (quick lookup)
 const classEntryMap = computed(() => {
   const map = new Map<number, CurriculumEntry>()
   if (!curriculumSubjectId.value) return map
@@ -760,7 +777,6 @@ function getClassOtherTeacher(classId: number): string | null {
   return teacherName(e.teacher_id)
 }
 
-// Classes grouped by school with search filter + assigned counts
 const curriculumClassGroups = computed(() => {
   const txt = curriculumClassSearch.value.toLowerCase()
   const filtered = curriculumAllClasses.value.filter(
@@ -785,7 +801,6 @@ const assignedClassCount = computed(() =>
   curriculumAllClasses.value.filter((c) => isClassAssigned(c.id)).length
 )
 
-// Total hours assigned to this teacher across all subjects this year
 const assignedHours = computed(() => {
   if (!selectedTeacher.value) return 0
   return allClusterEntries.value
@@ -1091,9 +1106,7 @@ async function loadAvailability() {
   uniqueSlots.value = slotNums
 
   const avail = await teachersStore.fetchAvailability(selectedTeacher.value.id, availYear.value)
-  // Clear previous state
   Object.keys(availabilityMap).forEach((k) => delete availabilityMap[k])
-  // Default all available
   for (let d = 0; d < 5; d++) {
     for (const s of slotNums) {
       availabilityMap[`${d}_${s}`] = true
