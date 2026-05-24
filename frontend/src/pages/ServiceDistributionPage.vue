@@ -261,6 +261,12 @@
                   </tr>
                 </tbody>
               </q-markup-table>
+              <div class="q-mt-sm">
+                <q-btn
+                  icon="print" label="Mapa de Serviço" size="sm" flat dense color="primary"
+                  @click.stop="printMapaServico(props.row)"
+                />
+              </div>
             </div>
           </q-td>
         </q-tr>
@@ -664,6 +670,95 @@ function doExport(format: 'pdf' | 'html' | 'csv') {
   if (format === 'pdf') exportToPDF(title, rows, distExportColumns)
   else if (format === 'html') exportToHTML(title, rows, distExportColumns, 'distribuicao-servico')
   else exportCsv()
+}
+
+async function printMapaServico(teacher: TeacherDistribution) {
+  if (!selectedYearId.value) return
+  try {
+    const params: Record<string, unknown> = { academic_year_id: selectedYearId.value }
+    if (selectedTimetableId.value) params.timetable_id = selectedTimetableId.value
+    const { data } = await api.get(`/service-distribution/mapa-servico/${teacher.id}`, { params })
+    const html = generateMapaServicoHtml(data)
+    const win = window.open('', '_blank')
+    if (win) {
+      win.document.write(html)
+      win.document.close()
+      win.onload = () => win.print()
+    }
+  } catch {
+    $q.notify({ type: 'negative', message: 'Erro ao gerar mapa de serviço' })
+  }
+}
+
+function generateMapaServicoHtml(data: {
+  teacher: { name: string; school_name?: string; cluster_name?: string }
+  academic_year_name: string
+  non_teaching_rows: { tl: number; discipline: string; text: string; type: string }[]
+  teaching_rows: { tl: number; class_name: string; discipline: string; turno: string; semestral: boolean; room: string; text: string; description: string }[]
+  total_tl: number
+}): string {
+  const { teacher, academic_year_name, non_teaching_rows, teaching_rows, total_tl } = data
+  const ntRows = non_teaching_rows.map(r => `
+    <tr>
+      <td class="num">${r.tl}</td>
+      <td></td>
+      <td>${r.discipline}</td>
+      <td></td><td></td><td></td><td></td>
+      <td>${r.text}</td>
+      <td>${r.type}</td>
+    </tr>`).join('')
+  const tRows = teaching_rows.map(r => `
+    <tr>
+      <td class="num">${r.tl}</td>
+      <td>${r.class_name}</td>
+      <td>${r.discipline}</td>
+      <td>${r.turno}</td>
+      <td>${r.semestral ? 'Sem' : ''}</td>
+      <td>${r.room}</td>
+      <td></td>
+      <td>${r.text}</td>
+      <td>${r.description}</td>
+    </tr>`).join('')
+  return `<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8">
+<title>Mapa de Serviço — ${teacher.name}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:11px;margin:20px}
+  h3{margin:2px 0;font-size:13px}
+  .header{display:flex;justify-content:space-between;margin-bottom:12px}
+  .header-left p{margin:2px 0}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid #999;padding:3px 6px}
+  th{background:#2c3e50;color:#fff;font-size:10px}
+  td.num{text-align:center;width:32px}
+  tr:nth-child(even){background:#f9f9f9}
+  .total{font-weight:bold;border-top:2px solid #333}
+  @media print{body{margin:10mm}}
+</style></head><body>
+<div class="header">
+  <div class="header-left">
+    <h3>${teacher.cluster_name || teacher.school_name || ''}</h3>
+    <p>${teacher.school_name || ''}</p>
+    <p>Horários ${academic_year_name}</p>
+  </div>
+  <div><strong>${teacher.name}</strong></div>
+</div>
+<table>
+<thead><tr>
+  <th>TL</th><th>Turma/s</th><th>Disciplina</th>
+  <th>Turnos</th><th>Semestral</th><th>Sala</th><th>Sala 2</th>
+  <th>Texto</th><th>Descrição</th>
+</tr></thead>
+<tbody>
+${ntRows}
+${tRows}
+<tr class="total">
+  <td class="num">${total_tl}.</td>
+  <td colspan="8"></td>
+</tr>
+</tbody>
+</table>
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`
 }
 
 function exportCsv() {

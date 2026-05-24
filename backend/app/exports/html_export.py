@@ -37,7 +37,13 @@ def generate_html_timetable(db, timetable_id: int, view_type: str = "class", ent
     grid = defaultdict(dict)
     for lesson in lessons:
         entry = lesson.curriculum_entry
-        subject_name = entry.subject.name if entry and entry.subject else "?"
+        base_name = entry.subject.name if entry and entry.subject else "?"
+        if view_type == "teacher" and entry and entry.teacher_label:
+            subject_name = entry.teacher_label
+        elif view_type == "class" and entry and entry.student_label:
+            subject_name = entry.student_label
+        else:
+            subject_name = base_name
         subject_color = entry.subject.color if entry and entry.subject else "#ccc"
         class_name = entry.class_.name if entry and entry.class_ else ""
         teacher_name = lesson.teacher.name if lesson.teacher else ""
