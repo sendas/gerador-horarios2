@@ -139,13 +139,16 @@
 .pt-menu-wrap { position: relative; }
 
 .pt-btn-more {
-  width: 30px; height: 30px;
+  height: 30px; padding: 0 10px;
   border-radius: 6px;
   background: var(--pt-bg-3);
   color: var(--pt-muted-2);
   border: 1px solid var(--pt-line);
   cursor: pointer;
-  display: grid; place-items: center;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
 }
 .pt-btn-more:hover { color: var(--pt-text); background: var(--pt-line); }
 
