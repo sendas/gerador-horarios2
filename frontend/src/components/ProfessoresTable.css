@@ -62,7 +62,7 @@
 
 .pt-row {
   display: grid;
-  grid-template-columns: 170px 170px 1fr 70px 80px 90px 130px;
+  grid-template-columns: 170px 170px 1fr 70px 80px 90px 150px;
   align-items: center;
   gap: 16px;
   padding: 14px 20px;
@@ -133,19 +133,23 @@
   background: var(--pt-gy); color: #fff;
   font-size: 12px; font-weight: 600; cursor: pointer;
   white-space: nowrap;
+  font-family: inherit;
 }
 .pt-btn-edit:hover { filter: brightness(1.1); }
 
 .pt-menu-wrap { position: relative; }
 
 .pt-btn-more {
-  width: 30px; height: 30px;
+  height: 30px; padding: 0 10px;
   border-radius: 6px;
   background: var(--pt-bg-3);
   color: var(--pt-muted-2);
   border: 1px solid var(--pt-line);
   cursor: pointer;
-  display: grid; place-items: center;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap;
+  font-family: inherit;
 }
 .pt-btn-more:hover { color: var(--pt-text); background: var(--pt-line); }
 
@@ -203,6 +207,6 @@
 
 /* ----- responsive: collapse metric columns on smaller screens ----- */
 @media (max-width: 1100px) {
-  .pt-row { grid-template-columns: 1fr 1fr 60px 60px 130px; }
+  .pt-row { grid-template-columns: 1fr 1fr 60px 60px 150px; }
   .pt-col-base, .pt-col-free { display: none; }
 }

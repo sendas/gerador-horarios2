@@ -77,11 +77,12 @@
               :aria-expanded="String(openMenuIdx === i)"
               @click.stop="toggleMenu(i)"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="5" r="1.5"/>
                 <circle cx="12" cy="12" r="1.5"/>
                 <circle cx="12" cy="19" r="1.5"/>
               </svg>
+              <span>Mais</span>
             </button>
 
             <div v-if="openMenuIdx === i" class="pt-menu" role="menu" @click.stop>
