@@ -258,6 +258,24 @@
             Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.
           </div>
 
+          <q-separator class="q-my-sm" />
+
+          <div class="text-caption text-grey-7 q-mb-xs">Etiquetas personalizadas (opcional)</div>
+          <q-input
+            v-model="entryForm.teacher_label"
+            label="Nome no horário do professor"
+            clearable
+            dense
+            hint='Ex: "OD-TIC" — substitui o nome da disciplina só para o professor'
+          />
+          <q-input
+            v-model="entryForm.student_label"
+            label="Nome no horário do aluno"
+            clearable
+            dense
+            hint='Ex: "TIC" — substitui o nome da disciplina só para o aluno'
+          />
+
           <template v-if="entryForm.is_semestral">
             <q-select
               v-model="entryForm.semester"
@@ -462,6 +480,8 @@ const entryForm = ref({
   is_semestral: false,
   semester: null as number | null,
   paired_subject_id: null as number | null,
+  teacher_label: null as string | null,
+  student_label: null as string | null,
 })
 
 const structureOptions = [
@@ -568,7 +588,7 @@ async function loadPlans() {
 function openAddEntry(yl: number) {
   dialogYearLevel.value = yl
   editingEntry.value = null
-  entryForm.value = { subject_id: null, hours_per_week: 2, weekly_structure: '1+1', is_semestral: false, semester: null, paired_subject_id: null }
+  entryForm.value = { subject_id: null, hours_per_week: 2, weekly_structure: '1+1', is_semestral: false, semester: null, paired_subject_id: null, teacher_label: null, student_label: null }
   entryDialog.value = true
 }
 
@@ -582,6 +602,8 @@ function openEditEntry(row: any) {
     is_semestral: !!row.is_semestral,
     semester: row.semester ?? null,
     paired_subject_id: row.paired_subject_id ?? null,
+    teacher_label: row.teacher_label ?? null,
+    student_label: row.student_label ?? null,
   }
   entryDialog.value = true
 }
@@ -609,11 +631,16 @@ async function saveEntry() {
       semester: entryForm.value.is_semestral ? entryForm.value.semester : null,
       paired_subject_id: entryForm.value.is_semestral ? entryForm.value.paired_subject_id : null,
     }
+    const labelPayload = {
+      teacher_label: entryForm.value.teacher_label || null,
+      student_label: entryForm.value.student_label || null,
+    }
     if (editingEntry.value) {
       await axios.put(`${API}/curriculum-plans/${editingEntry.value.id}`, {
         hours_per_week: entryForm.value.hours_per_week,
         weekly_structure: entryForm.value.weekly_structure,
         ...semestralPayload,
+        ...labelPayload,
       }, { headers: headers() })
     } else {
       await axios.post(`${API}/curriculum-plans`, {
@@ -624,6 +651,7 @@ async function saveEntry() {
         hours_per_week: entryForm.value.hours_per_week,
         weekly_structure: entryForm.value.weekly_structure,
         ...semestralPayload,
+        ...labelPayload,
       }, { headers: headers() })
     }
     entryDialog.value = false

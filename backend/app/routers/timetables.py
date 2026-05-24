@@ -58,6 +58,10 @@ def build_lesson_detail(lesson: ScheduledLesson) -> dict:
         "room_name": lesson.room.name if lesson.room else None,
         "paired_subject_name": paired.subject.name if paired and paired.subject else None,
         "paired_subject_color": paired.subject.color if paired and paired.subject else None,
+        "teacher_label": entry.teacher_label if entry else None,
+        "student_label": entry.student_label if entry else None,
+        "paired_teacher_label": paired.teacher_label if paired else None,
+        "paired_student_label": paired.student_label if paired else None,
     }
 
 
