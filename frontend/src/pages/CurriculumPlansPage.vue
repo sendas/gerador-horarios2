@@ -285,11 +285,13 @@
               <div class="q-mt-xs">Ex: TIC no 1.º sem ↔ ET no 2.º sem — os alunos têm TIC no 1.º semestre e ET nesse mesmo horário no 2.º semestre.</div>
               <div class="q-mt-xs text-orange-7">Isto <strong>não</strong> divide a turma — são os mesmos alunos, em momentos diferentes do ano.</div>
               <q-separator class="q-my-xs" color="orange-3" />
-              <div class="q-mt-xs text-orange-8"><strong>Bloco TIC com OC (2 tempos semestrais):</strong></div>
-              <div class="q-mt-xs">Cria 2 entradas semestrais de <strong>1 tempo</strong> cada:</div>
+              <div class="q-mt-xs text-orange-8"><strong>Bloco TIC com OC (4 entradas semestrais, par obrigatório):</strong></div>
+              <div class="q-mt-xs">TIC é semestral e precisa de uma disciplina par no semestre oposto (ex: ET, EV — <strong>não</strong> CD):</div>
               <div class="q-gutter-y-xs q-mt-xs q-ml-xs">
-                <div>TIC (1h, sem1) → par: <em>disciplina do sem2, se aplicável</em></div>
-                <div>OC-TIC (1h, sem1) → par: <em>respetiva do sem2, se aplicável</em></div>
+                <div>TIC (1h, sem1) → par: <strong>disciplina do sem2</strong></div>
+                <div>OC-TIC (1h, sem1) → par: <strong>OC da disciplina do sem2</strong></div>
+                <div>Disciplina do sem2 (1h, sem2) → par: <strong>TIC</strong></div>
+                <div>OC da disciplina do sem2 (1h, sem2) → par: <strong>OC-TIC</strong></div>
               </div>
               <div class="q-mt-xs text-orange-8"><strong>CD (Cidadania) e OC-CD</strong> são <strong>anuais</strong> — configurar <u>sem</u> o checkbox "Semestral" e <u>sem</u> par. São para toda a turma, todo o ano letivo.</div>
               <div class="q-mt-xs text-orange-7">Os <strong>Turnos</strong> (página de Turmas) tratam da divisão T1/T2 para o bloco TIC.</div>

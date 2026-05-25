@@ -249,13 +249,15 @@ const guides = ref<Guide[]>([
       {
         title: '2. Configurar o plano curricular',
         desc: 'Em <strong>Planos Curriculares</strong>, cria as seguintes entradas:<br>'
-          + '<em>Bloco TIC (semestral):</em><br>'
-          + '&bull; <strong>TIC</strong> — Semestral, 1.º sem, 1h (par: disciplina que ocupa esses slots no 2.º sem, se aplicável)<br>'
-          + '&bull; <strong>OC-TIC</strong> — Semestral, 1.º sem, 1h (par: respetiva do 2.º sem, se aplicável)<br>'
-          + '<em>Bloco CD (anual):</em><br>'
+          + '<em>Bloco TIC (semestral, com par obrigatório):</em><br>'
+          + '&bull; <strong>TIC</strong> — Semestral, 1.º sem, 1h, par: <em>disciplina do 2.º sem</em> (ex: ET, EV ou outra)<br>'
+          + '&bull; <strong>OC-TIC</strong> — Semestral, 1.º sem, 1h, par: <em>OC da disciplina do 2.º sem</em><br>'
+          + '&bull; A disciplina do 2.º sem — Semestral, 2.º sem, 1h, par: <em>TIC</em><br>'
+          + '&bull; A OC da disciplina do 2.º sem — Semestral, 2.º sem, 1h, par: <em>OC-TIC</em><br>'
+          + '<em>Bloco CD (anual, sem par):</em><br>'
           + '&bull; <strong>CD</strong> — <strong>Anual</strong>, 1h — <u>sem</u> checkbox "Semestral", <u>sem</u> par<br>'
           + '&bull; <strong>OC-CD</strong> — <strong>Anual</strong>, 1h — <u>sem</u> checkbox "Semestral", <u>sem</u> par',
-        note: 'Não colocar 2h em nenhuma das entradas — fica tudo com 1h. CD e OC-CD não devem ter o checkbox "Semestral" ativo — são anuais, para toda a turma.',
+        note: 'TIC é semestral e precisa sempre de uma disciplina par no 2.º semestre (não é CD — CD é anual). CD e OC-CD não têm par nem checkbox semestral.',
       },
       {
         title: '3. Configurar Turnos por turma (bloco TIC)',
