@@ -222,7 +222,7 @@ const quickLinks = computed(() => [
   { to: '/teacher-assignment', icon: 'assignment_ind', label: 'Atribuições', hint: 'Professor → turma', color: '#0d9488', bg: 'rgba(20,184,166,.10)' },
 ])
 
-// ── Guides ────────────────────────────────────────────────────────────────────────────
+// ── Guides ────────────────────────────────────────────────────────────────────
 
 type GuideStep = { title: string; desc: string; note?: string }
 type Guide = { id: string; title: string; hint: string; icon: string; iconBg: string; iconColor: string; open: boolean; steps: GuideStep[] }
@@ -242,26 +242,27 @@ const guides = ref<Guide[]>([
         desc: 'Aceda a <strong>Disciplinas</strong> e certifique-se de que existem entradas para:<br>'
           + '&bull; <strong>TIC</strong> — regime <em>Semestral</em>, estrutura semanal "1" (1 tempo por semana)<br>'
           + '&bull; <strong>OC-TIC</strong> (Oferta Complementar de TIC) — regime <em>Semestral</em>, estrutura "1"<br>'
-          + '&bull; <strong>CD</strong> (Cidadania) — regime <em>Semestral</em>, estrutura "1"<br>'
-          + '&bull; <strong>OC-CD</strong> (Oferta Complementar de CD) — regime <em>Semestral</em>, estrutura "1"',
-        note: 'Cada disciplina tem 1 tempo (45 min). TIC + OC-TIC juntas perfazem os 2 tempos semanais do bloco TIC; idem CD + OC-CD.',
+          + '&bull; <strong>CD</strong> (Cidadania) — regime <em>Anual</em>, estrutura "1" — toda a turma, todo o ano<br>'
+          + '&bull; <strong>OC-CD</strong> (Oferta Complementar de CD) — regime <em>Anual</em>, estrutura "1" — crédito de 1h, também anual e para toda a turma',
+        note: 'TIC + OC-TIC = 2 tempos semestrais (bloco TIC). CD + OC-CD = 2 tempos anuais (Cidadania tem 1h curricular + 1h de crédito OC). CD e OC-CD não são semestrais nem têm "par".',
       },
       {
         title: '2. Configurar o plano curricular',
-        desc: 'Em <strong>Planos Curriculares</strong>, cria <strong>4 entradas de 1h</strong> para o ano de escolaridade:<br>'
-          + '&bull; <strong>TIC</strong> — Semestral, 1.º sem, par: <em>CD</em><br>'
-          + '&bull; <strong>CD</strong> — Semestral, 2.º sem, par: <em>TIC</em><br>'
-          + '&bull; <strong>OC-TIC</strong> — Semestral, 1.º sem, par: <em>OC-CD</em><br>'
-          + '&bull; <strong>OC-CD</strong> — Semestral, 2.º sem, par: <em>OC-TIC</em><br>'
-          + 'O "par" garante que cada disciplina ocupa os <em>mesmos slots horários</em> no semestre oposto.',
-        note: 'Não colocar 2h em nenhuma das entradas — fica tudo com 1h. Os 2 tempos surgem da soma TIC + OC-TIC (ou CD + OC-CD).',
+        desc: 'Em <strong>Planos Curriculares</strong>, cria as seguintes entradas:<br>'
+          + '<em>Bloco TIC (semestral):</em><br>'
+          + '&bull; <strong>TIC</strong> — Semestral, 1.º sem, 1h (par: disciplina que ocupa esses slots no 2.º sem, se aplicável)<br>'
+          + '&bull; <strong>OC-TIC</strong> — Semestral, 1.º sem, 1h (par: respetiva do 2.º sem, se aplicável)<br>'
+          + '<em>Bloco CD (anual):</em><br>'
+          + '&bull; <strong>CD</strong> — <strong>Anual</strong>, 1h — <u>sem</u> checkbox "Semestral", <u>sem</u> par<br>'
+          + '&bull; <strong>OC-CD</strong> — <strong>Anual</strong>, 1h — <u>sem</u> checkbox "Semestral", <u>sem</u> par',
+        note: 'Não colocar 2h em nenhuma das entradas — fica tudo com 1h. CD e OC-CD não devem ter o checkbox "Semestral" ativo — são anuais, para toda a turma.',
       },
       {
-        title: '3. Configurar Turnos por turma',
-        desc: 'Em <strong>Turmas</strong>, para cada turma cria dois turnos (T1 e T2):<br>'
-          + '&bull; <strong>T1</strong>: alunos que fazem CD+OC-CD no 1.º semestre (e TIC+OC-TIC no 2.º)<br>'
-          + '&bull; <strong>T2</strong>: alunos que fazem TIC+OC-TIC no 1.º semestre (e CD+OC-CD no 2.º)<br>'
-          + 'Assim, nos <em>mesmos 2 slots horários</em>, T1 e T2 estão em salas e com professores diferentes em simultâneo.',
+        title: '3. Configurar Turnos por turma (bloco TIC)',
+        desc: 'Em <strong>Turmas</strong>, para cada turma cria dois turnos (T1 e T2) <em>apenas para o bloco TIC</em>:<br>'
+          + '&bull; <strong>T1</strong>: alunos que fazem TIC+OC-TIC no 1.º semestre<br>'
+          + '&bull; <strong>T2</strong>: alunos que fazem TIC+OC-TIC no 2.º semestre<br>'
+          + 'CD e OC-CD são para <em>toda a turma</em> — não precisam de turnos.',
       },
       {
         title: '4. Aplicar o plano às turmas',
@@ -270,16 +271,13 @@ const guides = ref<Guide[]>([
       },
       {
         title: '5. Atribuir professores',
-        desc: 'Em <strong>Atribuição de Professores</strong>, atribui o professor de TIC às entradas TIC e OC-TIC de cada turma (turno T2). '
-          + 'Atribui o professor de CD às entradas CD e OC-CD (turno T1). '
-          + 'No 2.º semestre os turnos trocam automaticamente pela relação de par.',
+        desc: 'Em <strong>Atribuição de Professores</strong>, atribui o professor de TIC às entradas TIC e OC-TIC (por turno T1/T2). '
+          + 'Atribui o professor de CD às entradas CD e OC-CD — <em>sem turno</em>, pois são para toda a turma.',
       },
       {
         title: '6. Resultado no horário',
-        desc: 'Na grelha semanal, cada slot mostra dois blocos lado a lado:<br>'
-          + '&bull; Slot 1: <code>CD (T1)</code> | <code>TIC (T2)</code><br>'
-          + '&bull; Slot 2: <code>OC-CD (T1)</code> | <code>OC-TIC (T2)</code><br>'
-          + 'No 2.º semestre, os blocos invertem: T1 passa a ter TIC/OC-TIC e T2 passa a ter CD/OC-CD.<br>'
+        desc: 'CD e OC-CD aparecem <em>todas as semanas</em>, todo o ano, para todos os alunos.<br>'
+          + 'No bloco TIC, T1 tem TIC+OC-TIC no 1.º semestre e T2 tem TIC+OC-TIC no 2.º semestre.<br>'
           + 'No <strong>Mapa de Serviço Docente</strong>, cada entrada aparece numa linha separada com o turno e semestre.',
       },
     ],
@@ -355,7 +353,7 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
-/* ── HERO ────────────────────────────────────────────────────────────────── */
+/* ── HERO ──────────────────────────────────────────────────────────── */
 .dash-hero {
   position: relative;
   overflow: hidden;
@@ -429,7 +427,7 @@ onMounted(async () => {
   border: 1px solid rgba(255,255,255,0.3);
 }
 
-/* ── SECTIONS ─────────────────────────────────────────────────────────── */
+/* ── SECTIONS ─────────────────────────────────────────────────────── */
 .dash-section {
   max-width: 1180px;
   margin: 0 auto;
@@ -457,7 +455,7 @@ onMounted(async () => {
   margin: 10px 0 0 0;
 }
 
-/* ── STAT CARDS ────────────────────────────────────────────────────────── */
+/* ── STAT CARDS ───────────────────────────────────────────────────── */
 .stat-card {
   position: relative;
   overflow: hidden;
@@ -501,7 +499,7 @@ onMounted(async () => {
   color: #94a3b8;
 }
 
-/* ── LINK CARDS ────────────────────────────────────────────────────────── */
+/* ── LINK CARDS ───────────────────────────────────────────────────── */
 .link-card {
   border-radius: 14px !important;
   background: #fff;
@@ -544,7 +542,7 @@ onMounted(async () => {
   color: #6366f1;
 }
 
-/* ── FOOTER ─────────────────────────────────────────────────────────── */
+/* ── FOOTER ───────────────────────────────────────────────────────── */
 .dash-footer {
   text-align: center;
   font-size: 0.78rem;
@@ -554,7 +552,7 @@ onMounted(async () => {
 .dash-footer__link { color: #64748b; text-decoration: none; }
 .dash-footer__link:hover { color: #6366f1; text-decoration: underline; }
 
-/* ── DARK MODE ─────────────────────────────────────────────────────────── */
+/* ── DARK MODE ────────────────────────────────────────────────────── */
 .body--dark .dashboard-root { background: #0b1020; }
 .body--dark .dash-section__title { color: #e2e8f0; }
 .body--dark .dash-section__eyebrow {
@@ -572,7 +570,7 @@ onMounted(async () => {
 .body--dark .link-card__hint { color: #94a3b8; }
 .body--dark .dash-footer { color: #64748b; }
 
-/* ── ANIMATIONS ─────────────────────────────────────────────────────────── */
+/* ── ANIMATIONS ───────────────────────────────────────────────────── */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -599,7 +597,7 @@ onMounted(async () => {
   .stat-card__value { font-size: 1.7rem; }
 }
 
-/* ── GUIDES SECTION ────────────────────────────────────────────────────────── */
+/* ── GUIDES SECTION ───────────────────────────────────────────────── */
 .dash-section__desc {
   font-size: 0.87rem;
   color: #64748b;
