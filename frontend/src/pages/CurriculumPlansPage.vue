@@ -58,7 +58,7 @@
           :disable="!selectedCluster || !selectedYear"
           @click="openCopyDialog"
         />
-        <ExportButton :disable="plans.length === 0" @export="doExport" />
+        <ExportButton :disable="plans.length === 0" :sort-options="planSortOptions" @export="doExport" />
       </q-card-section>
     </q-card>
 
@@ -255,26 +255,9 @@
 
           <q-checkbox v-model="entryForm.is_semestral" label="Disciplina semestral (apenas meio ano)" />
           <div class="text-caption text-grey-6 q-ml-xl q-mb-xs">
-            Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.
+            Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.<br/>
+            <strong>Padrão TIC + OC-TIC:</strong> se o currículo tem 2 tempos para TIC, cria <em>duas</em> entradas de 1 tempo cada — TIC (1h, sem1) e OC-TIC (1h, sem1). Juntas perfazem os 2 tempos na grelha.
           </div>
-
-          <q-separator class="q-my-sm" />
-
-          <div class="text-caption text-grey-7 q-mb-xs">Etiquetas personalizadas (opcional)</div>
-          <q-input
-            v-model="entryForm.teacher_label"
-            label="Nome no horário do professor"
-            clearable
-            dense
-            hint='Ex: "OD-TIC" — substitui o nome da disciplina só para o professor'
-          />
-          <q-input
-            v-model="entryForm.student_label"
-            label="Nome no horário do aluno"
-            clearable
-            dense
-            hint='Ex: "TIC" — substitui o nome da disciplina só para o aluno'
-          />
 
           <template v-if="entryForm.is_semestral">
             <q-select
@@ -301,6 +284,16 @@
               <div>A disciplina par ocupa os <strong>mesmos blocos horários</strong> no semestre oposto.</div>
               <div class="q-mt-xs">Ex: TIC no 1.º sem ↔ ET no 2.º sem — os alunos têm TIC no 1.º semestre e ET nesse mesmo horário no 2.º semestre.</div>
               <div class="q-mt-xs text-orange-7">Isto <strong>não</strong> divide a turma — são os mesmos alunos, em momentos diferentes do ano.</div>
+              <q-separator class="q-my-xs" color="orange-3" />
+              <div class="q-mt-xs text-orange-8"><strong>Rotação semestral com turnos (ex: TIC/CD):</strong></div>
+              <div class="q-mt-xs">Cria 4 entradas de <strong>1 tempo</strong> cada:</div>
+              <div class="q-gutter-y-xs q-mt-xs q-ml-xs">
+                <div>TIC (1h, sem1) → par: <strong>CD</strong></div>
+                <div>CD (1h, sem2) → par: <strong>TIC</strong></div>
+                <div>OC-TIC (1h, sem1) → par: <strong>OC-CD</strong></div>
+                <div>OC-CD (1h, sem2) → par: <strong>OC-TIC</strong></div>
+              </div>
+              <div class="q-mt-xs text-orange-7">Os <strong>Turnos</strong> (página de Turmas) tratam da divisão T1/T2 em simultâneo dentro de cada slot horário.</div>
             </q-banner>
           </template>
         </q-card-section>
@@ -417,12 +410,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import axios from 'axios'
-import ExportButton from 'components/ExportButton.vue'
+import ExportButton, { type SortOption } from 'components/ExportButton.vue'
 import { useExport, type ExportColumn } from '../composables/useExport'
 
 const $q = useQuasar()
 const API = '/api/v1'
-const { exportToPDF, exportToHTML, exportToCSV } = useExport()
+const { exportToPDF, exportToHTML, exportToCSV, sortRows } = useExport()
 
 const clusters = ref<any[]>([])
 const academicYears = ref<any[]>([])
@@ -464,8 +457,14 @@ const planExportColumns: ExportColumn[] = [
   { label: 'Regime', field: (r) => r.is_semestral ? 'Semestral' : 'Anual', align: 'center' },
 ]
 
-function doExport(format: 'pdf' | 'html' | 'csv') {
-  const rows = plans.value as unknown as Record<string, unknown>[]
+const planSortOptions: SortOption[] = [
+  { label: 'Ano Esc.', field: (r) => String(r.year_level ?? '') },
+  { label: 'Disciplina', field: (r) => (subjects.value.find((s: any) => s.id === r.subject_id) as any)?.name ?? '' },
+  { label: 'H/sem', field: (r) => String(r.hours_per_week ?? '') },
+]
+
+function doExport({ format, sortBy, sortDir }: { format: 'pdf' | 'html' | 'csv' | 'excel'; sortBy: SortOption | null; sortDir: 'asc' | 'desc' }) {
+  const rows = sortRows(plans.value as unknown as Record<string, unknown>[], sortBy, sortDir)
   const yearLabel = academicYears.value.find((y: any) => y.id === selectedYear.value)?.name ?? ''
   const title = `Planos Curriculares${yearLabel ? ` — ${yearLabel}` : ''}`
   if (format === 'pdf') exportToPDF(title, rows, planExportColumns)
@@ -480,8 +479,6 @@ const entryForm = ref({
   is_semestral: false,
   semester: null as number | null,
   paired_subject_id: null as number | null,
-  teacher_label: null as string | null,
-  student_label: null as string | null,
 })
 
 const structureOptions = [
@@ -588,7 +585,7 @@ async function loadPlans() {
 function openAddEntry(yl: number) {
   dialogYearLevel.value = yl
   editingEntry.value = null
-  entryForm.value = { subject_id: null, hours_per_week: 2, weekly_structure: '1+1', is_semestral: false, semester: null, paired_subject_id: null, teacher_label: null, student_label: null }
+  entryForm.value = { subject_id: null, hours_per_week: 2, weekly_structure: '1+1', is_semestral: false, semester: null, paired_subject_id: null }
   entryDialog.value = true
 }
 
@@ -602,8 +599,6 @@ function openEditEntry(row: any) {
     is_semestral: !!row.is_semestral,
     semester: row.semester ?? null,
     paired_subject_id: row.paired_subject_id ?? null,
-    teacher_label: row.teacher_label ?? null,
-    student_label: row.student_label ?? null,
   }
   entryDialog.value = true
 }
@@ -631,16 +626,11 @@ async function saveEntry() {
       semester: entryForm.value.is_semestral ? entryForm.value.semester : null,
       paired_subject_id: entryForm.value.is_semestral ? entryForm.value.paired_subject_id : null,
     }
-    const labelPayload = {
-      teacher_label: entryForm.value.teacher_label || null,
-      student_label: entryForm.value.student_label || null,
-    }
     if (editingEntry.value) {
       await axios.put(`${API}/curriculum-plans/${editingEntry.value.id}`, {
         hours_per_week: entryForm.value.hours_per_week,
         weekly_structure: entryForm.value.weekly_structure,
         ...semestralPayload,
-        ...labelPayload,
       }, { headers: headers() })
     } else {
       await axios.post(`${API}/curriculum-plans`, {
@@ -651,7 +641,6 @@ async function saveEntry() {
         hours_per_week: entryForm.value.hours_per_week,
         weekly_structure: entryForm.value.weekly_structure,
         ...semestralPayload,
-        ...labelPayload,
       }, { headers: headers() })
     }
     entryDialog.value = false
