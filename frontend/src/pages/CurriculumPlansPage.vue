@@ -255,7 +255,8 @@
 
           <q-checkbox v-model="entryForm.is_semestral" label="Disciplina semestral (apenas meio ano)" />
           <div class="text-caption text-grey-6 q-ml-xl q-mb-xs">
-            Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.
+            Ex: TIC só no 1.º semestre, EV só no 2.º semestre — cada uma ocupa metade do ano letivo.<br/>
+            <strong>Padrão TIC + OC-TIC:</strong> se o currículo tem 2 tempos para TIC, cria <em>duas</em> entradas de 1 tempo cada — TIC (1h, sem1) e OC-TIC (1h, sem1). Juntas perfazem os 2 tempos na grelha.
           </div>
 
           <template v-if="entryForm.is_semestral">
@@ -283,6 +284,16 @@
               <div>A disciplina par ocupa os <strong>mesmos blocos horários</strong> no semestre oposto.</div>
               <div class="q-mt-xs">Ex: TIC no 1.º sem ↔ ET no 2.º sem — os alunos têm TIC no 1.º semestre e ET nesse mesmo horário no 2.º semestre.</div>
               <div class="q-mt-xs text-orange-7">Isto <strong>não</strong> divide a turma — são os mesmos alunos, em momentos diferentes do ano.</div>
+              <q-separator class="q-my-xs" color="orange-3" />
+              <div class="q-mt-xs text-orange-8"><strong>Rotação semestral com turnos (ex: TIC/CD):</strong></div>
+              <div class="q-mt-xs">Cria 4 entradas de <strong>1 tempo</strong> cada:</div>
+              <div class="q-gutter-y-xs q-mt-xs q-ml-xs">
+                <div>TIC (1h, sem1) → par: <strong>CD</strong></div>
+                <div>CD (1h, sem2) → par: <strong>TIC</strong></div>
+                <div>OC-TIC (1h, sem1) → par: <strong>OC-CD</strong></div>
+                <div>OC-CD (1h, sem2) → par: <strong>OC-TIC</strong></div>
+              </div>
+              <div class="q-mt-xs text-orange-7">Os <strong>Turnos</strong> (página de Turmas) tratam da divisão T1/T2 em simultâneo dentro de cada slot horário.</div>
             </q-banner>
           </template>
         </q-card-section>
