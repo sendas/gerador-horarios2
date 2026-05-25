@@ -240,36 +240,76 @@ const guides = ref<Guide[]>([
       {
         title: '1. Criar as disciplinas',
         desc: 'Aceda a <strong>Disciplinas</strong> e certifique-se de que existem entradas para:<br>'
-          + '&bull; <strong>TIC</strong> — regime <em>Anual</em>, estrutura semanal "1+1" (2 tempos por semana)<br>'
-          + '&bull; <strong>OC</strong> (Oferta Complementar) — regime <em>Semestral</em>, estrutura "1" (1 tempo por semana)<br>'
-          + '&bull; <strong>Cidadania (CD)</strong> — regime <em>Semestral</em>, estrutura "1+1" normalmente<br>'
-          + 'Ative a opção <em>"Articulado (OC)"</em> em TIC e CD para as marcar como suscetíveis de receberem OC.',
-        note: 'A OC não tem professores próprios: é lecionada pelo professor de TIC ou CD e aparece no horário desse professor.',
+          + '&bull; <strong>TIC</strong> — regime <em>Semestral</em>, estrutura semanal "1" (1 tempo por semana)<br>'
+          + '&bull; <strong>OC-TIC</strong> (Oferta Complementar de TIC) — regime <em>Semestral</em>, estrutura "1"<br>'
+          + '&bull; <strong>CD</strong> (Cidadania) — regime <em>Semestral</em>, estrutura "1"<br>'
+          + '&bull; <strong>OC-CD</strong> (Oferta Complementar de CD) — regime <em>Semestral</em>, estrutura "1"',
+        note: 'Cada disciplina tem 1 tempo (45 min). TIC + OC-TIC juntas perfazem os 2 tempos semanais do bloco TIC; idem CD + OC-CD.',
       },
       {
         title: '2. Configurar o plano curricular',
-        desc: 'Em <strong>Planos Curriculares</strong>, edite a entrada de TIC para o ano de escolaridade pretendido:<br>'
-          + '&bull; Ative <em>Semestral</em> e defina <em>Disciplina par</em> = OC.<br>'
-          + '&bull; Em <em>Etiqueta do professor</em> escreva, por ex., <code>TIC</code> (o que aparece no horário do professor).<br>'
-          + '&bull; Em <em>Etiqueta do aluno</em> escreva <code>TIC</code> ou <code>TIC / OC</code> conforme preferir.<br>'
-          + 'Repita para a disciplina de Cidadania (par = OC), se aplicável.',
+        desc: 'Em <strong>Planos Curriculares</strong>, cria <strong>4 entradas de 1h</strong> para o ano de escolaridade:<br>'
+          + '&bull; <strong>TIC</strong> — Semestral, 1.º sem, par: <em>CD</em><br>'
+          + '&bull; <strong>CD</strong> — Semestral, 2.º sem, par: <em>TIC</em><br>'
+          + '&bull; <strong>OC-TIC</strong> — Semestral, 1.º sem, par: <em>OC-CD</em><br>'
+          + '&bull; <strong>OC-CD</strong> — Semestral, 2.º sem, par: <em>OC-TIC</em><br>'
+          + 'O "par" garante que cada disciplina ocupa os <em>mesmos slots horários</em> no semestre oposto.',
+        note: 'Não colocar 2h em nenhuma das entradas — fica tudo com 1h. Os 2 tempos surgem da soma TIC + OC-TIC (ou CD + OC-CD).',
       },
       {
-        title: '3. Aplicar o plano às turmas',
-        desc: 'Ainda em Planos Curriculares, clique <strong>Aplicar às turmas</strong>. O sistema cria entradas de currículo para cada turma, '
-          + 'incluindo a relação semestral entre TIC e OC.',
-        note: 'Ao aplicar, entradas existentes para o mesmo ano letivo não são sobrepostas por omissão (pode alterar esse comportamento na janela de aplicação).',
+        title: '3. Configurar Turnos por turma',
+        desc: 'Em <strong>Turmas</strong>, para cada turma cria dois turnos (T1 e T2):<br>'
+          + '&bull; <strong>T1</strong>: alunos que fazem CD+OC-CD no 1.º semestre (e TIC+OC-TIC no 2.º)<br>'
+          + '&bull; <strong>T2</strong>: alunos que fazem TIC+OC-TIC no 1.º semestre (e CD+OC-CD no 2.º)<br>'
+          + 'Assim, nos <em>mesmos 2 slots horários</em>, T1 e T2 estão em salas e com professores diferentes em simultâneo.',
       },
       {
-        title: '4. Atribuir professores',
-        desc: 'Em <strong>Definição de horas por docente → Atribuição de Professores</strong>, atribua o professor de TIC à entrada de TIC de cada turma. '
-          + 'A OC "vai a reboque" da TIC e não precisa de atribuição separada.',
+        title: '4. Aplicar o plano às turmas',
+        desc: 'Ainda em Planos Curriculares, clique <strong>Aplicar às turmas</strong>. O sistema cria as 4 entradas curriculares em cada turma, com a relação semestral já definida.',
+        note: 'Entradas existentes não são sobrepostas por omissão. Podes forçar a substituição na janela de aplicação.',
       },
       {
-        title: '5. Resultado no horário',
-        desc: 'Ao visualizar o horário do <strong>professor</strong>, o bloco semestral aparece com TIC em cima e OC em baixo (S1/S2). '
-          + 'No horário do <strong>aluno</strong>, aparece o nome configurado na etiqueta do aluno. '
-          + 'No <strong>Mapa de Serviço Docente</strong>, cada turma/OC surge numa linha separada com o turno e a marcação semestral.',
+        title: '5. Atribuir professores',
+        desc: 'Em <strong>Atribuição de Professores</strong>, atribui o professor de TIC às entradas TIC e OC-TIC de cada turma (turno T2). '
+          + 'Atribui o professor de CD às entradas CD e OC-CD (turno T1). '
+          + 'No 2.º semestre os turnos trocam automaticamente pela relação de par.',
+      },
+      {
+        title: '6. Resultado no horário',
+        desc: 'Na grelha semanal, cada slot mostra dois blocos lado a lado:<br>'
+          + '&bull; Slot 1: <code>CD (T1)</code> | <code>TIC (T2)</code><br>'
+          + '&bull; Slot 2: <code>OC-CD (T1)</code> | <code>OC-TIC (T2)</code><br>'
+          + 'No 2.º semestre, os blocos invertem: T1 passa a ter TIC/OC-TIC e T2 passa a ter CD/OC-CD.<br>'
+          + 'No <strong>Mapa de Serviço Docente</strong>, cada entrada aparece numa linha separada com o turno e semestre.',
+      },
+    ],
+  },
+  {
+    id: 'semestral-simples',
+    title: 'Par semestral simples (ex: EV ↔ ET)',
+    hint: 'Dois grupos de alunos fazem disciplinas diferentes em semestres alternados',
+    icon: 'swap_horiz',
+    iconBg: 'rgba(20,184,166,0.10)',
+    iconColor: '#14b8a6',
+    open: false,
+    steps: [
+      {
+        title: '1. Criar as disciplinas',
+        desc: 'Aceda a <strong>Disciplinas</strong> e certifique-se de que existem as duas disciplinas do par, ambas com regime <em>Semestral</em>.<br>'
+          + 'Ex: <strong>EV</strong> (Educação Visual) e <strong>ET</strong> (Educação Tecnológica), cada uma com a estrutura semanal adequada.',
+      },
+      {
+        title: '2. Configurar o plano curricular',
+        desc: 'Em <strong>Planos Curriculares</strong>, cria duas entradas semestrais:<br>'
+          + '&bull; <strong>EV</strong> — Semestral, 1.º sem, par: <em>ET</em><br>'
+          + '&bull; <strong>ET</strong> — Semestral, 2.º sem, par: <em>EV</em><br>'
+          + 'O "par" coloca ET nos <em>mesmos slots</em> de EV, mas no semestre oposto.',
+        note: 'Os alunos têm EV no 1.º semestre e ET no 2.º semestre — sem divisão de grupos, a turma está sempre junta.',
+      },
+      {
+        title: '3. Aplicar e atribuir professores',
+        desc: 'Clique <strong>Aplicar às turmas</strong>. Depois, em <strong>Atribuição de Professores</strong>, atribui o professor de EV e o professor de ET às respetivas entradas. '
+          + 'Cada professor leciona apenas no seu semestre.',
       },
     ],
   },
