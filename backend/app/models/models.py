@@ -147,6 +147,8 @@ class CurriculumEntry(Base):
     semester = Column(Integer, nullable=True)  # 1 or 2
     paired_entry_id = Column(Integer, ForeignKey("curriculum_entries.id"), nullable=True)
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
+    teacher_label = Column(String, nullable=True)  # nome no horário do professor
+    student_label = Column(String, nullable=True)  # nome no horário do aluno
     paired_entry = relationship("CurriculumEntry", foreign_keys="[CurriculumEntry.paired_entry_id]", remote_side="CurriculumEntry.id", uselist=False)
 
     class_ = relationship("Class", back_populates="curriculum_entries")
@@ -395,6 +397,8 @@ class CurriculumPlan(Base):
     is_semestral = Column(Boolean, default=False)
     semester = Column(Integer, nullable=True)  # 1 or 2
     paired_subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
+    teacher_label = Column(String, nullable=True)
+    student_label = Column(String, nullable=True)
 
     subject = relationship("Subject", foreign_keys="[CurriculumPlan.subject_id]")
     paired_subject = relationship("Subject", foreign_keys="[CurriculumPlan.paired_subject_id]")

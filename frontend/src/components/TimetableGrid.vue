@@ -32,7 +32,7 @@
                 >
                   <div class="paired-half" :style="halfStyle(group.s1!)">
                     <span class="paired-sem-tag">S1</span>
-                    <span class="lesson-subject">{{ group.s1!.subject_name }}</span>
+                    <span class="lesson-subject">{{ displayName(group.s1!) }}</span>
                     <div class="lesson-meta" v-if="view !== 'class' && group.s1!.class_name">{{ group.s1!.class_name }}</div>
                     <div class="lesson-meta" v-if="view !== 'teacher' && group.s1!.teacher_name">{{ group.s1!.teacher_name }}</div>
                     <div class="lesson-meta" v-if="view !== 'room' && group.s1!.room_name">{{ group.s1!.room_name }}</div>
@@ -40,7 +40,7 @@
                   <div class="paired-divider" />
                   <div class="paired-half" :style="halfStyle(group.s2!)">
                     <span class="paired-sem-tag">S2</span>
-                    <span class="lesson-subject">{{ group.s2!.subject_name }}</span>
+                    <span class="lesson-subject">{{ displayName(group.s2!) }}</span>
                     <div class="lesson-meta" v-if="view !== 'class' && group.s2!.class_name">{{ group.s2!.class_name }}</div>
                     <div class="lesson-meta" v-if="view !== 'teacher' && group.s2!.teacher_name">{{ group.s2!.teacher_name }}</div>
                     <div class="lesson-meta" v-if="view !== 'room' && group.s2!.room_name">{{ group.s2!.room_name }}</div>
@@ -59,7 +59,7 @@
                 >
                   <q-icon v-if="timetableId" name="drag_indicator" size="xs" class="lesson-drag-icon" />
                   <div class="lesson-subject">
-                    {{ group.lesson!.subject_name }}
+                    {{ displayName(group.lesson!) }}
                     <q-badge
                       v-if="group.lesson!.is_semestral"
                       :color="group.lesson!.semester === 1 ? 'blue-7' : 'orange-7'"
@@ -236,6 +236,18 @@ function cellGroups(day: number, slot: number): LessonGroup[] {
     groups.push({ key: `single-${lesson.id}`, type: 'single', lesson })
   }
   return groups
+}
+
+function displayName(lesson: ScheduledLesson): string {
+  if (props.view === 'teacher' && lesson.teacher_label) return lesson.teacher_label
+  if (props.view === 'class' && lesson.student_label) return lesson.student_label
+  return lesson.subject_name ?? ''
+}
+
+function displayNamePaired(lesson: ScheduledLesson): string {
+  if (props.view === 'teacher' && lesson.paired_teacher_label) return lesson.paired_teacher_label
+  if (props.view === 'class' && lesson.paired_student_label) return lesson.paired_student_label
+  return lesson.paired_subject_name ?? lesson.subject_name ?? ''
 }
 
 function cardStyle(lesson: ScheduledLesson) {

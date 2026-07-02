@@ -694,13 +694,13 @@ function rawTeacher(row: PtRow) {
   return teachersStore.teachers.find((t) => t.id === row.id) ?? null
 }
 
-function handleEditar(row: PtRow)         { const t = rawTeacher(row); if (t) openEdit(t) }
-function handleEscolas(row: PtRow)        { const t = rawTeacher(row); if (t) openSchools(t) }
-function handleDisciplinas(row: PtRow)    { const t = rawTeacher(row); if (t) openSubjects(t) }
-function handleTurmas(row: PtRow)         { const t = rawTeacher(row); if (t) openCurriculum(t) }
-function handleDisponibilidade(row: PtRow){ const t = rawTeacher(row); if (t) openAvailability(t) }
-function handleApagar(row: PtRow)         { const t = rawTeacher(row); if (t) confirmDelete(t) }
-function handleExpand(row: PtRow | null)  { const t = row ? rawTeacher(row) : null; if (t) void toggleTeacherExpand(t) }
+function handleEditar(row: PtRow)          { const t = rawTeacher(row); if (t) openEdit(t) }
+function handleEscolas(row: PtRow)         { const t = rawTeacher(row); if (t) openSchools(t) }
+function handleDisciplinas(row: PtRow)     { const t = rawTeacher(row); if (t) openSubjects(t) }
+function handleTurmas(row: PtRow)          { const t = rawTeacher(row); if (t) openCurriculum(t) }
+function handleDisponibilidade(row: PtRow) { const t = rawTeacher(row); if (t) openAvailability(t) }
+function handleApagar(row: PtRow)          { const t = rawTeacher(row); if (t) confirmDelete(t) }
+function handleExpand(row: PtRow | null)   { const t = row ? rawTeacher(row) : null; if (t) void toggleTeacherExpand(t) }
 
 const clusterOptions = computed(() => clustersStore.clusters.map((c) => ({ label: c.name, value: c.id })))
 const schoolOptions = computed(() => schoolsStore.schools.map((s) => ({ label: s.name, value: s.id })))
@@ -746,12 +746,10 @@ const curriculumYear = ref<number | null>(null)
 const curriculumSubjectId = ref<number | null>(null)
 const defaultHours = ref(2)
 const curriculumClassSearch = ref('')
-// All curriculum entries for the cluster+year (to detect existing entries per class+subject)
 const allClusterEntries = ref<CurriculumEntry[]>([])
 
 const clusterId = computed(() => clustersStore.clusters[0]?.id ?? null)
 
-// All classes in the cluster for the curriculum year
 const curriculumAllClasses = computed<SchoolClass[]>(() => {
   const schoolIds = new Set(schoolsStore.schools.filter((s) => s.cluster_id === clusterId.value).map((s) => s.id))
   return classesStore.classes.filter(
@@ -759,7 +757,6 @@ const curriculumAllClasses = computed<SchoolClass[]>(() => {
   )
 })
 
-// Map class_id → CurriculumEntry for the selected subject (quick lookup)
 const classEntryMap = computed(() => {
   const map = new Map<number, CurriculumEntry>()
   if (!curriculumSubjectId.value) return map
@@ -780,7 +777,6 @@ function getClassOtherTeacher(classId: number): string | null {
   return teacherName(e.teacher_id)
 }
 
-// Classes grouped by school with search filter + assigned counts
 const curriculumClassGroups = computed(() => {
   const txt = curriculumClassSearch.value.toLowerCase()
   const filtered = curriculumAllClasses.value.filter(
@@ -805,7 +801,6 @@ const assignedClassCount = computed(() =>
   curriculumAllClasses.value.filter((c) => isClassAssigned(c.id)).length
 )
 
-// Total hours assigned to this teacher across all subjects this year
 const assignedHours = computed(() => {
   if (!selectedTeacher.value) return 0
   return allClusterEntries.value
@@ -1111,9 +1106,7 @@ async function loadAvailability() {
   uniqueSlots.value = slotNums
 
   const avail = await teachersStore.fetchAvailability(selectedTeacher.value.id, availYear.value)
-  // Clear previous state
   Object.keys(availabilityMap).forEach((k) => delete availabilityMap[k])
-  // Default all available
   for (let d = 0; d < 5; d++) {
     for (const s of slotNums) {
       availabilityMap[`${d}_${s}`] = true

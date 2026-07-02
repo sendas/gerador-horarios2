@@ -31,6 +31,10 @@ export interface ScheduledLesson {
   room_name?: string
   paired_subject_name?: string
   paired_subject_color?: string
+  teacher_label?: string | null
+  student_label?: string | null
+  paired_teacher_label?: string | null
+  paired_student_label?: string | null
 }
 
 export interface TimetableDetail extends Timetable {

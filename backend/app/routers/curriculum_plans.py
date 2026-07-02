@@ -41,6 +41,8 @@ class PlanCreate(BaseModel):
     is_semestral: bool = False
     semester: Optional[int] = None
     paired_subject_id: Optional[int] = None
+    teacher_label: Optional[str] = None
+    student_label: Optional[str] = None
 
 
 class PlanUpdate(BaseModel):
@@ -49,6 +51,8 @@ class PlanUpdate(BaseModel):
     is_semestral: Optional[bool] = None
     semester: Optional[int] = None
     paired_subject_id: Optional[int] = None
+    teacher_label: Optional[str] = None
+    student_label: Optional[str] = None
 
 
 class ApplyRequest(BaseModel):
@@ -127,6 +131,8 @@ def _plan_to_dict(p: CurriculumPlan) -> dict:
         "subject_name": p.subject.name if p.subject else None,
         "subject_color": p.subject.color if p.subject else None,
         "paired_subject_name": p.paired_subject.name if p.paired_subject else None,
+        "teacher_label": p.teacher_label,
+        "student_label": p.student_label,
     }
 
 
@@ -235,6 +241,8 @@ def apply_plan(req: ApplyRequest, db: Session = Depends(get_db)):
                     exists.consecutive_pairs = cp
                     exists.is_semestral = plan.is_semestral
                     exists.semester = plan.semester if plan.is_semestral else None
+                    exists.teacher_label = plan.teacher_label
+                    exists.student_label = plan.student_label
                     created += 1
                 else:
                     skipped += 1
@@ -249,6 +257,8 @@ def apply_plan(req: ApplyRequest, db: Session = Depends(get_db)):
                 consecutive_pairs=cp,
                 is_semestral=plan.is_semestral,
                 semester=plan.semester if plan.is_semestral else None,
+                teacher_label=plan.teacher_label,
+                student_label=plan.student_label,
             )
             db.add(entry)
             created += 1

@@ -261,6 +261,12 @@
                   </tr>
                 </tbody>
               </q-markup-table>
+              <div class="q-mt-sm">
+                <q-btn
+                  icon="print" label="Mapa de Serviço" size="sm" flat dense color="primary"
+                  @click.stop="printMapaServico(props.row)"
+                />
+              </div>
             </div>
           </q-td>
         </q-tr>
