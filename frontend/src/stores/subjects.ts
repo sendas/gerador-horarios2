@@ -15,6 +15,7 @@ export interface Subject {
   paired_subject_name?: string | null
   is_physical_education: boolean
   can_exempt_articulado: boolean
+  required_room_type?: string | null
 }
 
 export const useSubjectsStore = defineStore('subjects', () => {

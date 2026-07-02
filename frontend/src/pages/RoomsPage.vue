@@ -40,8 +40,14 @@
           <q-form @submit="save">
             <q-select v-model="form.school_id" :options="schoolOptions" label="Escola *" emit-value map-options :rules="[v => !!v || 'Obrigatório']" />
             <q-input v-model="form.name" label="Nome *" :rules="[v => !!v || 'Obrigatório']" />
-            <q-input v-model.number="form.capacity" label="Capacidade" type="number" min="1" />
-            <q-input v-model="form.room_type" label="Tipo" />
+            <q-input v-model.number="form.capacity" label="Capacidade" type="number" min="1" hint="N.º máximo de alunos — usado para ajustar sala à dimensão da turma" />
+            <q-select
+              v-model="form.room_type"
+              :options="roomTypeSuggestions"
+              label="Tipo"
+              use-input new-value-mode="add-unique" input-debounce="0"
+              hint="Ex: classroom, gym, lab, informatica — as disciplinas podem exigir um tipo específico"
+            />
             <div class="row justify-end q-mt-md q-gutter-sm">
               <q-btn flat label="Cancelar" v-close-popup />
               <q-btn type="submit" color="primary" :label="editing ? 'Guardar' : 'Criar'" />
@@ -74,6 +80,13 @@ const filterSchool = ref<number | null>(null)
 const dialog = ref(false)
 const editing = ref<null | { id: number }>(null)
 const form = ref({ school_id: null as number | null, name: '', capacity: 30, room_type: 'classroom' })
+
+// Common room types + any already used in this cluster
+const roomTypeSuggestions = computed(() => {
+  const base = ['classroom', 'gym', 'lab', 'informatica', 'musica', 'ev-et', 'auditorio']
+  const used = rooms.value.map(r => r.room_type).filter(Boolean)
+  return [...new Set([...base, ...used])].sort()
+})
 
 const schoolOptions = computed(() => schoolsStore.schools.map((s) => ({ label: s.name, value: s.id })))
 

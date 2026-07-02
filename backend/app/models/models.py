@@ -107,6 +107,7 @@ class Subject(Base):
     paired_subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)
     is_physical_education = Column(Boolean, default=False)   # triggers no-PE-after-lunch
     can_exempt_articulado = Column(Boolean, default=False)   # students can have dispensation
+    required_room_type = Column(String, nullable=True)       # e.g. 'gym', 'lab' — lessons must use a room of this type
 
     cluster = relationship("Cluster", back_populates="subjects")
     paired_subject = relationship("Subject", foreign_keys="[Subject.paired_subject_id]", remote_side="Subject.id", uselist=False)

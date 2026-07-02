@@ -178,8 +178,86 @@ def test_turnos_get_distinct_rooms_and_semestral_pair_can_share():
     db.close()
 
 
+def test_required_room_type_and_capacity():
+    """PE requires the gym (1 gym → PE lessons of the two classes can never
+    overlap in time), and the big class gets the big room."""
+    db = database.SessionLocal()
+    cluster, year, school = _seed_common(db, "T3", n_rooms=0)
+    # 2 generic rooms with different capacities + 1 gym
+    r_small = models.Room(school_id=school.id, name="Pequena", capacity=20, room_type="classroom")
+    r_big = models.Room(school_id=school.id, name="Grande", capacity=30, room_type="classroom")
+    r_gym = models.Room(school_id=school.id, name="Ginásio", capacity=60, room_type="gym")
+    db.add_all([r_small, r_big, r_gym]); db.flush()
+
+    cls_big = models.Class(school_id=school.id, academic_year_id=year.id,
+                           name="9A", year_level=9, num_students=28)
+    cls_small = models.Class(school_id=school.id, academic_year_id=year.id,
+                             name="9B", year_level=9, num_students=18)
+    db.add_all([cls_big, cls_small]); db.flush()
+
+    subj_ef = models.Subject(cluster_id=cluster.id, name="EF-T3", code="EF3",
+                             is_physical_education=True, required_room_type="gym")
+    subj_pt = models.Subject(cluster_id=cluster.id, name="PT-T3", code="PT3")
+    db.add_all([subj_ef, subj_pt]); db.flush()
+
+    t_ef1 = models.Teacher(cluster_id=cluster.id, name="Prof EF1-T3")
+    t_ef2 = models.Teacher(cluster_id=cluster.id, name="Prof EF2-T3")
+    t_pt = models.Teacher(cluster_id=cluster.id, name="Prof PT-T3")
+    db.add_all([t_ef1, t_ef2, t_pt]); db.flush()
+
+    # Different PE teachers → without the in-model gym constraint the solver
+    # could overlap both PE lessons in the same slot.
+    for cls, t_ef in ((cls_big, t_ef1), (cls_small, t_ef2)):
+        db.add(models.CurriculumEntry(class_id=cls.id, subject_id=subj_ef.id,
+                                      teacher_id=t_ef.id, hours_per_week=2.0))
+        db.add(models.CurriculumEntry(class_id=cls.id, subject_id=subj_pt.id,
+                                      teacher_id=t_pt.id, hours_per_week=2.0))
+    tt = models.Timetable(academic_year_id=year.id, name="TT-T3", status="pending")
+    db.add(tt); db.commit()
+    tt_id = tt.id
+    gym_id, big_id = r_gym.id, r_big.id
+    ef_subj_id = subj_ef.id
+    big_cls_id = cls_big.id
+    class_ids = [cls_big.id, cls_small.id]
+    db.close()
+
+    sched.generate_timetable(tt_id, {
+        "max_time_seconds": 30, "class_ids": class_ids,
+        "no_pe_after_lunch": False, "students_start_slot_1": False,
+        "no_student_gaps": False,
+    })
+
+    db = database.SessionLocal()
+    tt = db.query(models.Timetable).get(tt_id)
+    assert tt.status == "generated", tt.generation_log
+    lessons = db.query(models.ScheduledLesson).filter_by(timetable_id=tt_id).all()
+    entry_map = {e.id: e for e in db.query(models.CurriculumEntry).all()}
+
+    gym_slots = []
+    for l in lessons:
+        e = entry_map[l.curriculum_entry_id]
+        if e.subject_id == ef_subj_id:
+            # 1. PE lessons must be in the gym
+            assert l.room_id == gym_id, f"PE lesson in room {l.room_id}, expected gym {gym_id}"
+            gym_slots.append((l.day_of_week, l.slot_number))
+        else:
+            assert l.room_id != gym_id, "non-PE lesson placed in the gym"
+    # 2. In-model constraint: 1 gym → PE lessons never overlap
+    assert len(gym_slots) == len(set(gym_slots)), f"gym double-booked: {gym_slots}"
+
+    # 3. Capacity: the 28-student class gets the 30-seat room for generic lessons
+    for l in lessons:
+        e = entry_map[l.curriculum_entry_id]
+        if e.class_id == big_cls_id and e.subject_id != ef_subj_id:
+            assert l.room_id == big_id, \
+                f"28-student class in room {l.room_id}, expected big room {big_id}"
+    db.close()
+
+
 if __name__ == "__main__":
     test_no_room_double_booking_and_stable_home_room()
     print("test 1 OK")
     test_turnos_get_distinct_rooms_and_semestral_pair_can_share()
     print("test 2 OK")
+    test_required_room_type_and_capacity()
+    print("test 3 OK")

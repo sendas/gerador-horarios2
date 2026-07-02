@@ -22,6 +22,7 @@ def _subject_dict(obj: Subject) -> dict:
         "paired_subject_name": obj.paired_subject.name if obj.paired_subject else None,
         "is_physical_education": obj.is_physical_education,
         "can_exempt_articulado": obj.can_exempt_articulado,
+        "required_room_type": obj.required_room_type,
     }
     return d
 

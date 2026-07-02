@@ -75,6 +75,7 @@ for _sql in [
     "ALTER TABLE classes ADD COLUMN class_director_id INTEGER REFERENCES teachers(id)",
     "ALTER TABLE teachers ADD COLUMN art79_reduction INTEGER DEFAULT 0",
     "ALTER TABLE teachers ADD COLUMN art79_manual BOOLEAN DEFAULT 0",
+    "ALTER TABLE subjects ADD COLUMN required_room_type TEXT",
 ]:
     try:
         with engine.connect() as _conn:

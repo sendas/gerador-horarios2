@@ -300,10 +300,11 @@ def _run_solver(db, timetable_id: int, options: dict = None):
     for entry in entries:
         class_school[entry.class_id] = entry.class_.school_id
 
-    # Rooms per school
-    rooms_by_school: dict[int, list[int]] = defaultdict(list)
+    # Rooms per school (full objects — type and capacity feed both the in-model
+    # capacity constraints and the post-solve room assignment)
+    rooms_by_school: dict[int, list] = defaultdict(list)
     for room in db.query(Room).all():
-        rooms_by_school[room.school_id].append(room.id)
+        rooms_by_school[room.school_id].append(room)
 
     # Teacher info — only load teachers that are actually involved in the occurrences
     # being scheduled (directly assigned or candidates). Loading all teachers causes
@@ -360,6 +361,9 @@ def _run_solver(db, timetable_id: int, options: dict = None):
     pinned_lesson_ids: set[int] = set()
     pinned_entry_ids: set[int] = set()
     blocked_class_slots: dict[int, set] = defaultdict(set)  # class_id -> {(day, slot)}
+    # (school_id, day, slot, semester, required_room_type) per pinned lesson —
+    # reduces the in-model room capacity available to the rest of the solve.
+    pinned_slot_occupancy: list[tuple] = []
 
     if locked_teacher_ids or locked_class_ids:
         entries_map = {e.id: e for e in entries}
@@ -384,6 +388,11 @@ def _run_solver(db, timetable_id: int, options: dict = None):
                 blocked_class_slots[entry.class_id].add((lesson.day_of_week, lesson.slot_number))
                 if lesson.teacher_id:
                     blocked[lesson.teacher_id].add((lesson.day_of_week, lesson.slot_number))
+                pinned_slot_occupancy.append((
+                    class_school_pre.get(entry.class_id),
+                    lesson.day_of_week, lesson.slot_number, lesson.semester,
+                    getattr(entry.subject, 'required_room_type', None) if entry.subject else None,
+                ))
 
         # An entry is "fully pinned" when all its occurrences are covered by pinned lessons
         for eid, occ_list in pinned_entry_occ.items():
@@ -1105,6 +1114,98 @@ def _run_solver(db, timetable_id: int, options: dict = None):
                     if slot_num_of[si] > lunch_slot and (eid, occ, si) in x:
                         model.Add(x[(eid, occ, si)] == 0)
 
+    # 12. Room capacity (in-model): a school cannot host more simultaneous
+    # lessons than it has rooms, and lessons whose subject requires a specific
+    # room type cannot exceed the number of rooms of that type. Semestral
+    # sides are counted separately (sem1+annual vs sem2+annual) because
+    # opposite-semester lessons never actually coexist. Rooms occupied by
+    # pinned (locked) lessons reduce the available capacity.
+    from collections import Counter
+    _pin_total: Counter = Counter()   # (sid, day, slot, side) -> n
+    _pin_type: Counter = Counter()    # (sid, day, slot, side, room_type) -> n
+    for (sid_p, day_p, slot_p, sem_p, rt_p) in pinned_slot_occupancy:
+        for side in (1, 2):
+            if sem_p is None or sem_p == side:
+                _pin_total[(sid_p, day_p, slot_p, side)] += 1
+                if rt_p:
+                    _pin_type[(sid_p, day_p, slot_p, side, rt_p)] += 1
+
+    entries_by_school: dict[int, list] = defaultdict(list)
+    for e in entries:
+        sid_e = class_school.get(e.class_id)
+        if sid_e is not None:
+            entries_by_school[sid_e].append(e)
+
+    def _n_occ_of(e):
+        return e.split_count if e.is_split else max(1, round(e.hours_per_week))
+
+    n_room_constraints = 0
+    for sid_r, sch_entries in entries_by_school.items():
+        rooms_here = rooms_by_school.get(sid_r, [])
+        if not rooms_here:
+            continue  # no rooms configured for this school — nothing to bound
+        n_rooms_total = len(rooms_here)
+        type_counts = Counter((r.room_type or "classroom") for r in rooms_here)
+
+        # Room types actually required by subjects taught at this school
+        req_types_here: set[str] = set()
+        for e in sch_entries:
+            rt = getattr(e.subject, 'required_room_type', None) if e.subject else None
+            if rt:
+                req_types_here.add(rt)
+
+        missing_types = [rt for rt in sorted(req_types_here) if type_counts.get(rt, 0) == 0]
+        if missing_types:
+            _log(db, tt, (
+                f"⚠ Escola {sid_r}: disciplinas requerem sala do tipo "
+                f"{', '.join(repr(m) for m in missing_types)} mas a escola não tem salas "
+                "desse tipo — a restrição será ignorada e a atribuição de sala fica sem garantia."
+            ))
+
+        # Guard against incomplete room data: if the school has fewer rooms
+        # registered than classes, the global bound would make everything
+        # INFEASIBLE — warn and enforce only the per-type constraints.
+        n_classes_here = len({e.class_id for e in sch_entries})
+        enforce_total = n_rooms_total >= n_classes_here
+        if not enforce_total:
+            _log(db, tt, (
+                f"⚠ Escola {sid_r}: só {n_rooms_total} sala(s) registada(s) para "
+                f"{n_classes_here} turma(s) — limite global de salas ignorado "
+                "(complete as salas em /rooms para o ativar)."
+            ))
+
+        has_semestral_here = any(e.is_semestral for e in sch_entries)
+        sides = (1, 2) if has_semestral_here else (1,)
+
+        for si in range(n_slots):
+            day_r, slot_r = all_slots[si]
+            for side in sides:
+                vars_side = []
+                vars_by_type: dict[str, list] = defaultdict(list)
+                for e in sch_entries:
+                    e_sem = e.semester if e.is_semestral else None
+                    if e_sem is not None and e_sem != side:
+                        continue
+                    rt = getattr(e.subject, 'required_room_type', None) if e.subject else None
+                    for occ in range(_n_occ_of(e)):
+                        xv = x.get((e.id, occ, si))
+                        if xv is not None:
+                            vars_side.append(xv)
+                            if rt and type_counts.get(rt, 0) > 0:
+                                vars_by_type[rt].append(xv)
+                if enforce_total:
+                    k_total = n_rooms_total - _pin_total.get((sid_r, day_r, slot_r, side), 0)
+                    if len(vars_side) > max(k_total, 0):
+                        model.Add(sum(vars_side) <= max(k_total, 0))
+                        n_room_constraints += 1
+                for rt, tvars in vars_by_type.items():
+                    k_rt = type_counts[rt] - _pin_type.get((sid_r, day_r, slot_r, side, rt), 0)
+                    if len(tvars) > max(k_rt, 0):
+                        model.Add(sum(tvars) <= max(k_rt, 0))
+                        n_room_constraints += 1
+    if n_room_constraints:
+        logger.info("Timetable %d: %d restrições de capacidade de salas adicionadas.", timetable_id, n_room_constraints)
+
     # ── Soft constraints (objective) ─────────────────────────────────────────
     penalty_terms = []
 
@@ -1518,11 +1619,14 @@ def _run_solver(db, timetable_id: int, options: dict = None):
 
             placements.append((eid, day, slot, assigned_teacher, entries_map_by_id.get(eid)))
 
-        # ── Room assignment: conflict-free greedy with stable per-class room ──
+        # ── Room assignment: conflict-free greedy, type- and capacity-aware ──
         # Two lessons clash in a room when they share (day, slot) and their
-        # semesters overlap (None = whole year, conflicts with both semesters).
-        # Semestral pairs share slots but run in opposite semesters, so they
-        # may legitimately share a room.
+        # semesters overlap (None = whole year). Semestral pairs run in
+        # opposite semesters and may legitimately share a room.
+        # Priority order:
+        #   1. lessons requiring a room type (gym, lab, …) — fewest options;
+        #   2. stable "home room" per class (biggest class → biggest generic room);
+        #   3. best-fit fallback (smallest room that still fits the class).
         def _sem_overlap(a, b):
             return a is None or b is None or a == b
 
@@ -1534,44 +1638,97 @@ def _run_solver(db, timetable_id: int, options: dict = None):
                 if pl.room_id:
                     room_usage[(pl.day_of_week, pl.slot_number, pl.room_id)].append(pl.semester)
 
-        # Each class gets a stable "home room" (round-robin over the school's
-        # rooms), used whenever free — mirrors the usual "sala da turma".
-        home_room: dict[int, int] = {}
-        _rr: dict[int, int] = defaultdict(int)
-        for cid in sorted({e.class_id for e in entries}):
-            sid = class_school.get(cid)
-            rooms = rooms_by_school.get(sid, [])
-            if rooms:
-                home_room[cid] = rooms[_rr[sid] % len(rooms)]
-                _rr[sid] += 1
+        def _room_free(rid, day_, slot_, sem_):
+            return not any(_sem_overlap(sem_, s) for s in room_usage[(day_, slot_, rid)])
+
+        def _fit_key(room, n_students):
+            cap = room.capacity or 0
+            # fitting rooms first (smallest that fits), then largest non-fitting
+            return (0, cap) if cap >= n_students else (1, -cap)
+
+        class_size: dict[int, int] = {}
+        for e in entries:
+            if e.class_ is not None and e.class_id not in class_size:
+                class_size[e.class_id] = e.class_.num_students or 25
+
+        # Room types required by any scheduled subject are reserved —
+        # never handed out as home rooms.
+        special_types: set[str] = set()
+        for e in entries:
+            rt_e = getattr(e.subject, 'required_room_type', None) if e.subject else None
+            if rt_e:
+                special_types.add(rt_e)
+
+        # Home rooms: biggest classes get the biggest generic rooms.
+        home_room: dict[int, object] = {}
+        school_class_ids: dict[int, list[int]] = defaultdict(list)
+        for cid in {e.class_id for e in entries}:
+            sid_c = class_school.get(cid)
+            if sid_c is not None:
+                school_class_ids[sid_c].append(cid)
+        for sid_c, cids in school_class_ids.items():
+            rooms_all_s = rooms_by_school.get(sid_c, [])
+            generic = [r for r in rooms_all_s if (r.room_type or "classroom") not in special_types]
+            pool = generic or rooms_all_s
+            if not pool:
+                continue
+            pool_sorted = sorted(pool, key=lambda r: -(r.capacity or 0))
+            for i, cid in enumerate(sorted(cids, key=lambda c: -class_size.get(c, 25))):
+                home_room[cid] = pool_sorted[i % len(pool_sorted)]
 
         rooms_exhausted = 0
+        undersized = 0
         lessons_to_add = []
-        for (eid, day, slot, assigned_teacher, entry) in placements:
+
+        def _placement_priority(p):
+            entry_p = p[4]
+            rt_p = getattr(entry_p.subject, 'required_room_type', None) if entry_p and entry_p.subject else None
+            size_p = class_size.get(entry_p.class_id, 25) if entry_p else 0
+            return (0 if rt_p else 1, -size_p)
+
+        for (eid, day, slot, assigned_teacher, entry) in sorted(placements, key=_placement_priority):
             assigned_room = None
             lesson_sem = entry.semester if entry and entry.is_semestral else None
             if entry:
-                sid = class_school.get(entry.class_id)
-                rooms = rooms_by_school.get(sid, [])
-                hr = home_room.get(entry.class_id)
-                candidates = ([hr] if hr is not None else []) + [r for r in rooms if r != hr]
-                for rid in candidates:
-                    if not any(_sem_overlap(lesson_sem, s) for s in room_usage[(day, slot, rid)]):
-                        assigned_room = rid
+                sid_c = class_school.get(entry.class_id)
+                rooms_all_s = rooms_by_school.get(sid_c, [])
+                n_students = class_size.get(entry.class_id, 25)
+                rt = getattr(entry.subject, 'required_room_type', None) if entry.subject else None
+
+                if rt:
+                    typed = [r for r in rooms_all_s if (r.room_type or "classroom") == rt]
+                    typed_ids = {r.id for r in typed}
+                    candidates = sorted(typed, key=lambda r: _fit_key(r, n_students)) \
+                        + sorted((r for r in rooms_all_s if r.id not in typed_ids),
+                                 key=lambda r: _fit_key(r, n_students))
+                else:
+                    hr = home_room.get(entry.class_id)
+                    rest = [r for r in rooms_all_s if hr is None or r.id != hr.id]
+                    generic_rest = sorted((r for r in rest if (r.room_type or "classroom") not in special_types),
+                                          key=lambda r: _fit_key(r, n_students))
+                    special_rest = sorted((r for r in rest if (r.room_type or "classroom") in special_types),
+                                          key=lambda r: _fit_key(r, n_students))
+                    candidates = ([hr] if hr is not None else []) + generic_rest + special_rest
+
+                for room in candidates:
+                    if _room_free(room.id, day, slot, lesson_sem):
+                        assigned_room = room
                         break
-                if assigned_room is None and rooms:
+                if assigned_room is None and rooms_all_s:
                     # More simultaneous lessons than rooms — fall back to the
                     # home room and flag it, rather than dropping the lesson.
-                    assigned_room = hr if hr is not None else rooms[0]
+                    assigned_room = home_room.get(entry.class_id) or rooms_all_s[0]
                     rooms_exhausted += 1
                 if assigned_room is not None:
-                    room_usage[(day, slot, assigned_room)].append(lesson_sem)
+                    room_usage[(day, slot, assigned_room.id)].append(lesson_sem)
+                    if assigned_room.capacity and assigned_room.capacity < n_students:
+                        undersized += 1
 
             lessons_to_add.append(ScheduledLesson(
                 timetable_id=timetable_id,
                 curriculum_entry_id=eid,
                 teacher_id=assigned_teacher,
-                room_id=assigned_room,
+                room_id=assigned_room.id if assigned_room is not None else None,
                 day_of_week=day,
                 slot_number=slot,
                 semester=lesson_sem,
@@ -1581,6 +1738,11 @@ def _run_solver(db, timetable_id: int, options: dict = None):
             _log(db, tt, (
                 f"⚠ Salas insuficientes: {rooms_exhausted} aula(s) partilham sala com outra turma "
                 "no mesmo tempo. Adicione salas em /rooms."
+            ))
+        if undersized:
+            _log(db, tt, (
+                f"⚠ Capacidade: {undersized} aula(s) ficaram em salas com capacidade inferior "
+                "ao n.º de alunos da turma. Verifique as capacidades em /rooms."
             ))
 
         if pinned_lesson_ids:

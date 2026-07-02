@@ -127,6 +127,7 @@ class SubjectBase(BaseModel):
     paired_subject_id: Optional[int] = None
     is_physical_education: bool = False
     can_exempt_articulado: bool = False
+    required_room_type: Optional[str] = None
 
 class SubjectCreate(SubjectBase):
     pass
@@ -141,6 +142,7 @@ class SubjectUpdate(BaseModel):
     paired_subject_id: Optional[int] = None
     is_physical_education: bool = False
     can_exempt_articulado: bool = False
+    required_room_type: Optional[str] = None
 
 class SubjectResponse(SubjectBase):
     model_config = ConfigDict(from_attributes=True)

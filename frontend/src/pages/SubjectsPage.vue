@@ -139,7 +139,22 @@
             <q-toggle v-model="form.is_physical_education" label="Educação Física" color="orange-7" />
             <div class="text-caption text-grey-6 q-ml-xl q-mb-xs">Sujeita à regra 'sem EF depois do almoço'</div>
             <q-toggle v-model="form.can_exempt_articulado" label="Pode ter dispensa (ensino articulado)" color="teal-7" />
-            <div class="text-caption text-grey-6 q-ml-xl">Alunos de ensino articulado podem ser dispensados desta disciplina</div>
+            <div class="text-caption text-grey-6 q-ml-xl q-mb-sm">Alunos de ensino articulado podem ser dispensados desta disciplina</div>
+
+            <q-select
+              v-model="form.required_room_type"
+              :options="roomTypeOptions"
+              label="Tipo de sala obrigatório"
+              dense clearable use-input new-value-mode="add-unique"
+              input-debounce="0"
+              class="q-mt-sm"
+            >
+              <template #prepend><q-icon name="meeting_room" color="brown-6" /></template>
+            </q-select>
+            <div class="text-caption text-grey-6 q-mb-xs">
+              As aulas desta disciplina só usam salas deste tipo (ex: <em>gym</em> para EF, <em>lab</em> para CN/FQ).
+              Deixa vazio para qualquer sala. Os tipos correspondem ao campo "Tipo" em <strong>Salas</strong>.
+            </div>
 
             <div class="row justify-end q-mt-lg q-gutter-sm">
               <q-btn flat label="Cancelar" v-close-popup />
@@ -155,6 +170,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { api } from 'boot/axios'
 import { useSubjectsStore, type Subject } from 'stores/subjects'
 import { useClustersStore } from 'stores/clusters'
 import ExportButton, { type SortOption } from 'components/ExportButton.vue'
@@ -233,7 +249,17 @@ const form = ref({
   paired_subject_id: null as number | null,
   is_physical_education: false,
   can_exempt_articulado: false,
+  required_room_type: null as string | null,
 })
+
+// Room types already registered in /rooms — offered as suggestions
+const roomTypeOptions = ref<string[]>([])
+async function loadRoomTypes() {
+  try {
+    const { data } = await api.get<{ room_type?: string }[]>('/rooms')
+    roomTypeOptions.value = [...new Set(data.map(r => r.room_type).filter((t): t is string => !!t))].sort()
+  } catch { /* rooms endpoint unavailable — free text still works */ }
+}
 
 const clusterOptions = computed(() => clustersStore.clusters.map((c) => ({ label: c.name, value: c.id })))
 
@@ -255,12 +281,12 @@ watch(() => form.value.regime, (val) => {
 })
 
 onMounted(async () => {
-  await Promise.all([subjectsStore.fetchAll(), clustersStore.fetchAll()])
+  await Promise.all([subjectsStore.fetchAll(), clustersStore.fetchAll(), loadRoomTypes()])
 })
 
 function openCreate() {
   editing.value = null
-  form.value = { cluster_id: null, name: '', code: '', color: '#3498db', weekly_structure: '1+1', regime: 'annual', default_semester: null, paired_subject_id: null, is_physical_education: false, can_exempt_articulado: false }
+  form.value = { cluster_id: null, name: '', code: '', color: '#3498db', weekly_structure: '1+1', regime: 'annual', default_semester: null, paired_subject_id: null, is_physical_education: false, can_exempt_articulado: false, required_room_type: null }
   dialog.value = true
 }
 
@@ -273,6 +299,7 @@ function openEdit(row: Subject) {
     paired_subject_id: row.paired_subject_id ?? null,
     is_physical_education: row.is_physical_education || false,
     can_exempt_articulado: row.can_exempt_articulado || false,
+    required_room_type: row.required_room_type ?? null,
   }
   dialog.value = true
 }
