@@ -1493,7 +1493,8 @@ def _run_solver(db, timetable_id: int, options: dict = None):
     # Only wipe existing lessons when we have a new valid solution to replace them.
     # On failure the previous timetable (if any) is preserved intact.
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        lessons_to_add = []
+        # First pass: extract placements (day/slot/teacher) without rooms.
+        placements = []
         for (eid, occ) in occurrences:
             scheduled_si = None
             for si in range(n_slots):
@@ -1515,14 +1516,56 @@ def _run_solver(db, timetable_id: int, options: dict = None):
                         assigned_teacher = tid
                         break
 
-            # Assign a room from the class's school
-            entry = next((e for e in entries if e.id == eid), None)
+            placements.append((eid, day, slot, assigned_teacher, entries_map_by_id.get(eid)))
+
+        # ── Room assignment: conflict-free greedy with stable per-class room ──
+        # Two lessons clash in a room when they share (day, slot) and their
+        # semesters overlap (None = whole year, conflicts with both semesters).
+        # Semestral pairs share slots but run in opposite semesters, so they
+        # may legitimately share a room.
+        def _sem_overlap(a, b):
+            return a is None or b is None or a == b
+
+        room_usage: dict[tuple[int, int, int], list] = defaultdict(list)  # (day, slot, room_id) -> [semesters]
+
+        # Rooms already taken by pinned (locked) lessons stay reserved.
+        if pinned_lesson_ids:
+            for pl in db.query(ScheduledLesson).filter(ScheduledLesson.id.in_(pinned_lesson_ids)).all():
+                if pl.room_id:
+                    room_usage[(pl.day_of_week, pl.slot_number, pl.room_id)].append(pl.semester)
+
+        # Each class gets a stable "home room" (round-robin over the school's
+        # rooms), used whenever free — mirrors the usual "sala da turma".
+        home_room: dict[int, int] = {}
+        _rr: dict[int, int] = defaultdict(int)
+        for cid in sorted({e.class_id for e in entries}):
+            sid = class_school.get(cid)
+            rooms = rooms_by_school.get(sid, [])
+            if rooms:
+                home_room[cid] = rooms[_rr[sid] % len(rooms)]
+                _rr[sid] += 1
+
+        rooms_exhausted = 0
+        lessons_to_add = []
+        for (eid, day, slot, assigned_teacher, entry) in placements:
             assigned_room = None
+            lesson_sem = entry.semester if entry and entry.is_semestral else None
             if entry:
-                school_id = class_school.get(entry.class_id)
-                school_rooms = rooms_by_school.get(school_id, [])
-                if school_rooms:
-                    assigned_room = school_rooms[0]
+                sid = class_school.get(entry.class_id)
+                rooms = rooms_by_school.get(sid, [])
+                hr = home_room.get(entry.class_id)
+                candidates = ([hr] if hr is not None else []) + [r for r in rooms if r != hr]
+                for rid in candidates:
+                    if not any(_sem_overlap(lesson_sem, s) for s in room_usage[(day, slot, rid)]):
+                        assigned_room = rid
+                        break
+                if assigned_room is None and rooms:
+                    # More simultaneous lessons than rooms — fall back to the
+                    # home room and flag it, rather than dropping the lesson.
+                    assigned_room = hr if hr is not None else rooms[0]
+                    rooms_exhausted += 1
+                if assigned_room is not None:
+                    room_usage[(day, slot, assigned_room)].append(lesson_sem)
 
             lessons_to_add.append(ScheduledLesson(
                 timetable_id=timetable_id,
@@ -1531,7 +1574,13 @@ def _run_solver(db, timetable_id: int, options: dict = None):
                 room_id=assigned_room,
                 day_of_week=day,
                 slot_number=slot,
-                semester=entry.semester if entry and entry.is_semestral else None,
+                semester=lesson_sem,
+            ))
+
+        if rooms_exhausted:
+            _log(db, tt, (
+                f"⚠ Salas insuficientes: {rooms_exhausted} aula(s) partilham sala com outra turma "
+                "no mesmo tempo. Adicione salas em /rooms."
             ))
 
         if pinned_lesson_ids:
